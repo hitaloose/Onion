@@ -4,5 +4,9 @@ cd /mnt/SDCARD/.tmp_update
 
 # Turn off if runtime exits
 echo "Runtime exited unexpectedly"
-reboot
+if [ "$(cat /tmp/deviceModel)" = "35" ]; then
+    reboot -f # RG35XX: the stock init ignores the reboot signal
+else
+    reboot
+fi
 sleep 10

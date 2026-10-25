@@ -9,13 +9,32 @@ logfile=$(basename "$0" .sh)
 
 MODEL_MM=283
 MODEL_MMP=354
+MODEL_RG35XX=35
 screen_resolution="640x480"
+
+# Anbernic RG35XX (original): Onion runs chrooted on top of the stock system
+is_rg35xx() {
+    [ "$DEVICE_ID" = "$MODEL_RG35XX" ]
+}
 
 main() {
     # Set model ID
-    axp 0 > /dev/null
-    export DEVICE_ID=$([ $? -eq 0 ] && echo $MODEL_MMP || echo $MODEL_MM)
+    if [ -d /sys/class/power_supply/atc260x-usb ]; then
+        export DEVICE_ID=$MODEL_RG35XX
+    else
+        axp 0 > /dev/null
+        export DEVICE_ID=$([ $? -eq 0 ] && echo $MODEL_MMP || echo $MODEL_MM)
+    fi
     echo -n "$DEVICE_ID" > /tmp/deviceModel
+
+    if is_rg35xx; then
+        # The Miyoo libraries in miyoo/lib would shadow the rootfs ones
+        export LD_LIBRARY_PATH="$sysdir/lib"
+        # Recover the console from a crashed SDL program, then start the
+        # gamepad to keyboard translator that every input reader needs
+        vtreset 1 > /dev/null
+        padmapd &
+    fi
 
     SERIAL_NUMBER=$(read_uuid)
     echo -n "$SERIAL_NUMBER" > /tmp/deviceSN
@@ -48,6 +67,8 @@ main() {
     elif [ $DEVICE_ID -eq $MODEL_MMP ]; then
         axp_status="0x$(axp 0 | cut -d':' -f2)"
         is_charging=$([ $(($axp_status & 0x4)) -eq 4 ] && echo 1 || echo 0)
+    elif is_rg35xx; then
+        is_charging=$(cat /sys/class/power_supply/battery/charger_online)
     fi
 
     # Show charging animation
@@ -59,8 +80,10 @@ main() {
     # Make sure MainUI doesn't show charging animation
     touch /tmp/no_charging_ui
 
-    # Check if blf needs enabling
-    if [ -f $sysdir/config/.blf ]; then
+    # Check if blf needs enabling (it drives the Miyoo display pipeline)
+    if is_rg35xx; then
+        :
+    elif [ -f $sysdir/config/.blf ]; then
         /mnt/SDCARD/.tmp_update/script/blue_light.sh check &
     elif [ -f $sysdir/config/.blfOn ]; then
         /mnt/SDCARD/.tmp_update/script/blue_light.sh enable &
@@ -105,8 +128,10 @@ main() {
         mount -o bind /mnt/SDCARD/RetroArch/retroarch_miyoo354 /mnt/SDCARD/RetroArch/retroarch
     fi
 
-    # Bind arcade name library to customer path
-    mount -o bind $miyoodir/lib/libgamename.so /customer/lib/libgamename.so
+    # Bind arcade name library to customer path (used by the Miyoo MainUI)
+    if ! is_rg35xx; then
+        mount -o bind $miyoodir/lib/libgamename.so /customer/lib/libgamename.so
+    fi
 
     rm -rf /tmp/is_booting
 
@@ -135,7 +160,7 @@ main() {
             touch $sysdir/.runGameSwitcher
         elif [ $startup_app -eq 2 ]; then
             log "\n\n:: STARTUP APP: RetroArch\n\n"
-            echo "LD_PRELOAD=$miyoodir/lib/libpadsp.so ./retroarch -v" > $sysdir/cmd_to_run.sh
+            echo "$(padsp_preload)./retroarch -v" > $sysdir/cmd_to_run.sh
             touch /tmp/quick_switch
         elif [ $startup_app -eq 3 ]; then
             log "\n\n:: STARTUP APP: AdvanceMENU\n\n"
@@ -202,11 +227,22 @@ launch_main_ui() {
 
     cd $sysdir
 
-    # Generate battery percentage image
-    mainUiBatPerc
-
     # Hide any new recents if applicable
     check_hide_recents
+
+    if is_rg35xx; then
+        # Onion's own MainUI: no battery image, binary mount or wifi to track
+        mute_theme_bgm
+        cd $miyoodir/app
+        ./MainUI 2>&1 > /dev/null
+        check_hide_recents
+        mv -f /tmp/cmd_to_run.sh $sysdir/cmd_to_run.sh
+        set_prev_state "mainui"
+        return
+    fi
+
+    # Generate battery percentage image
+    mainUiBatPerc
 
     # Ensure we've mounted the correct MainUI binary
     mount_main_ui
@@ -324,7 +360,7 @@ launch_game() {
         if echo "$rompath" | grep -q ":"; then
             launch_script=$(echo "$rompath" | awk '{split($0,a,":"); print a[1]}')
             rompath=$(echo "$rompath" | awk '{split($0,a,":"); print a[2]}')
-            echo "LD_PRELOAD=/mnt/SDCARD/miyoo/app/../lib/libpadsp.so \"$launch_script\" \"$rompath\"" > $sysdir/cmd_to_run.sh
+            echo "$(padsp_preload)\"$launch_script\" \"$rompath\"" > $sysdir/cmd_to_run.sh
         fi
 
         orig_path="$rompath"
@@ -435,6 +471,10 @@ launch_game() {
 
     log "cmd retval: $retval"
 
+    if is_rg35xx && [ $retval -ge 128 ]; then
+        vtreset 1 > /dev/null
+    fi
+
     if [ $retval -eq 404 ]; then
         infoPanel --title "File not found" --message "The requested file was not found." --auto
     elif [ $retval -ge 128 ] && [ $retval -ne 143 ] && [ $retval -ne 255 ] && [ ! -f /tmp/.forceKillRetroarch ]; then
@@ -488,10 +528,10 @@ override_game_core() {
         if [ -f "/mnt/SDCARD/RetroArch/$corepath" ]; then
             if [ -z "$appendconfig" ]; then
                 # No appendconfig needed
-                echo "LD_PRELOAD=$miyoodir/lib/libpadsp.so ./retroarch -v -L \"$corepath\" \"$rompath\"" > $sysdir/cmd_to_run.sh
+                echo "$(padsp_preload)./retroarch -v -L \"$corepath\" \"$rompath\"" > $sysdir/cmd_to_run.sh
             else
                 # Inject appendconfig directly into the final runtime command
-                echo "LD_PRELOAD=$miyoodir/lib/libpadsp.so ./retroarch -v --appendconfig \"$appendconfig\" -L \"$corepath\" \"$rompath\"" > $sysdir/cmd_to_run.sh
+                echo "$(padsp_preload)./retroarch -v --appendconfig \"$appendconfig\" -L \"$corepath\" \"$rompath\"" > $sysdir/cmd_to_run.sh
             fi
             return 0 # Success
         else
@@ -638,7 +678,11 @@ launch_switcher() {
     log "\n:: Launch switcher"
     cd $sysdir
     start_audioserver
-    LD_PRELOAD="$miyoodir/lib/libpadsp.so" gameSwitcher
+    if is_rg35xx; then
+        gameSwitcher
+    else
+        LD_PRELOAD="$miyoodir/lib/libpadsp.so" gameSwitcher
+    fi
     rm $sysdir/.runGameSwitcher
     set_prev_state "switcher"
     sync
@@ -774,6 +818,20 @@ init_system() {
     create_swap
     load_settings
 
+    if is_rg35xx; then
+        ip addr add 127.0.0.1/8 dev lo
+        ifconfig lo up
+
+        # init backlight: Onion's raw brightness is a 0-100 duty cycle
+        brightness=$(/customer/app/jsonval brightness)
+        brightness_raw=$(awk "BEGIN { print int((3 * exp(0.350656 * $brightness) + 0.5) * 1024 / 100) }")
+        log "brightness: $brightness -> $brightness_raw"
+        echo $brightness_raw > /sys/class/backlight/backlight.2/brightness
+
+        echo -n "$screen_resolution" > /tmp/screen_resolution
+        return
+    fi
+
     # init_lcd
     cat /proc/ls
     sleep 0.25
@@ -820,6 +878,8 @@ load_settings() {
     if [ ! -f /mnt/SDCARD/system.json ]; then
         if [ -f /appconfigs/system.json ]; then
             cp -f /appconfigs/system.json /mnt/SDCARD/system.json
+        elif is_rg35xx; then
+            cp -f $sysdir/res/rg35xx_system.json /mnt/SDCARD/system.json
         else
             cp -f $sysdir/res/miyoo${DEVICE_ID}_system.json /mnt/SDCARD/system.json
         fi
@@ -912,7 +972,15 @@ set_startup_tab() {
     setState "$startup_tab"
 }
 
+# Miyoo libpadsp routes OSS audio to audioserver; the RG35XX uses ALSA
+padsp_preload() {
+    is_rg35xx || echo -n "LD_PRELOAD=$miyoodir/lib/libpadsp.so "
+}
+
 start_audioserver() {
+    if is_rg35xx; then
+        return
+    fi
     defvol=$(echo $(/customer/app/jsonval vol) | awk '{ printf "%.0f\n", 48 * (log(1 + $1) / log(10)) - 60 }')
     runifnecessary "audioserver" $miyoodir/app/audioserver $defvol
 }
@@ -931,6 +999,9 @@ runifnecessary() {
 }
 
 start_networking() {
+    if is_rg35xx; then
+        return
+    fi
     rm $sysdir/config/.hotspotState # dont start hotspot at boot
 
     touch /tmp/network_changed
@@ -940,7 +1011,7 @@ start_networking() {
 }
 
 check_networking() {
-    if [ ! -f /tmp/network_changed ]; then
+    if is_rg35xx || [ ! -f /tmp/network_changed ]; then
         return
     fi
 

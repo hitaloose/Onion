@@ -26,6 +26,10 @@
 #define POWER_NAME "atc260x_onoff"
 #define TRIGGER_THRESHOLD 127
 
+// Key repeat of the Miyoo Mini keyboard, which keymon's REPEAT_SEC assumes
+#define REPEAT_DELAY_MS 250
+#define REPEAT_PERIOD_MS 50
+
 static const struct {
     int src;
     int dst;
@@ -129,6 +133,7 @@ static int create_uinput(void)
 
     ioctl(fd, UI_SET_EVBIT, EV_KEY);
     ioctl(fd, UI_SET_EVBIT, EV_SYN);
+    ioctl(fd, UI_SET_EVBIT, EV_REP); // the input core generates the repeats
     for (int i = 0; i < ARRAY_LEN(output_keys); i++)
         ioctl(fd, UI_SET_KEYBIT, output_keys[i]);
 
@@ -146,6 +151,14 @@ static int create_uinput(void)
     }
 
     return fd;
+}
+
+static void emit(int fd, int type, int code, int value);
+
+static void set_repeat_rate(int fd)
+{
+    emit(fd, EV_REP, REP_DELAY, REPEAT_DELAY_MS);
+    emit(fd, EV_REP, REP_PERIOD, REPEAT_PERIOD_MS);
 }
 
 static void emit(int fd, int type, int code, int value)
@@ -181,6 +194,14 @@ int main(int argc, char *argv[])
     int up = 0, down = 0, left = 0, right = 0, l2 = 0, r2 = 0;
     char node[300];
 
+    // A second instance would deliver every key twice
+    int existing = open_input_by_name(DEVICE_NAME);
+    if (existing >= 0) {
+        close(existing);
+        fprintf(stderr, "padmapd: already running\n");
+        return 0;
+    }
+
     pad_fd = open_input_by_name(GAMEPAD_NAME);
     power_fd = open_input_by_name(POWER_NAME);
     if (pad_fd < 0) {
@@ -193,6 +214,7 @@ int main(int argc, char *argv[])
         perror("padmapd: uinput");
         return 1;
     }
+    set_repeat_rate(out_fd);
 
     // Give udev-less /dev a stable name for the virtual keyboard
     usleep(100000);

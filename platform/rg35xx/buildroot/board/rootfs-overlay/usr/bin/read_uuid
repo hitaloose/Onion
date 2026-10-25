@@ -1,0 +1,5 @@
+#!/bin/sh
+# RG35XX replacement for Onion's read_uuid (SigmaStar RIU registers): prints a
+# 12 hex digit device id, the size Onion expects (DEVICE_SN[13]), from the
+# last 12 digits of the SoC serial
+sed -n 's/^Serial[[:space:]]*:[[:space:]]*//p' /proc/cpuinfo | tail -c 13

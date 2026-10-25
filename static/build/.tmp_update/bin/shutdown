@@ -50,6 +50,20 @@ if [ "$0" = "/tmp/_shutdown" ]; then
 	umount /mnt/SDCARD/RetroArch/retroarch
 	umount /customer/lib/libgamename.so
 	swapoff /mnt/SDCARD/cachefile
+
+	if [ "$(cat /tmp/deviceModel)" = "35" ]; then
+		# RG35XX: /mnt/SDCARD is a bind mount in a chroot, unmounting it leaves
+		# the card mounted read-write outside; the stock init ignores the
+		# poweroff/reboot signals, so call the kernel directly
+		mount -o remount,ro /mnt/SDCARD
+		mount -o remount,ro /mnt/SDCARD2 2> /dev/null
+		if [ "$1" = "-r" ]; then
+			reboot -f
+		else
+			poweroff -f
+		fi
+	fi
+
 	umount -r /mnt/SDCARD
 	umount /mnt/SDCARD
 

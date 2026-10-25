@@ -68,6 +68,21 @@ void takeScreenshot(void)
     settings_setBrightness(settings.brightness, true, false);
 }
 
+#ifdef PLATFORM_RG35XX
+// Onion runs chrooted next to the stock Android-style system, whose processes
+// (adbd, dmenu.bin, ...) share /proc with us and must never be stopped or killed
+static bool is_onion_process(pid_t pid)
+{
+    char path[32];
+    struct stat own_root, proc_root;
+
+    sprintf(path, "/proc/%d/root", pid);
+    if (stat("/", &own_root) != 0 || stat(path, &proc_root) != 0)
+        return false;
+    return own_root.st_dev == proc_root.st_dev && own_root.st_ino == proc_root.st_ino;
+}
+#endif
+
 //
 //    Suspend / Kill processes
 //        mode: 0:STOP 1:TERM 2:KILL
@@ -109,6 +124,10 @@ int suspend(uint32_t mode)
         if (dir->d_type == DT_DIR) {
             pid = atoi(dir->d_name);
             if ((pid > 2) && (pid != suspend_pid)) {
+#ifdef PLATFORM_RG35XX
+                if (!is_onion_process(pid))
+                    continue;
+#endif
                 sprintf(fname, "/proc/%d/stat", pid);
                 FILE *fp = fopen(fname, "r");
                 if (fp) {
@@ -118,7 +137,8 @@ int suspend(uint32_t mode)
                 }
                 if ((ppid > 2) &&
                     ((state == 'R') || (state == 'S') || (state == 'D')) &&
-                    (strcmp(comm, "(sh)")) && (!(flags & PF_KTHREAD))) {
+                    (strcmp(comm, "(sh)")) && (strcmp(comm, "(padmapd)")) &&
+                    (!(flags & PF_KTHREAD))) {
                     if (mode) {
                         if ((strcmp(comm, "(runtime.sh)")) &&
                             (strcmp(comm, "(updater)")) &&

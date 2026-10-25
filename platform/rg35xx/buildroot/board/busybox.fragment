@@ -1,0 +1,11 @@
+# Applets used by Onion's runtime.sh and scripts that the Buildroot default
+# busybox config leaves out
+CONFIG_PGREP=y
+CONFIG_PKILL=y
+CONFIG_REV=y
+CONFIG_STAT=y
+CONFIG_FEATURE_STAT_FORMAT=y
+CONFIG_TIMEOUT=y
+CONFIG_NC=y
+# awk exp()/log() for runtime.sh brightness and volume curves
+CONFIG_FEATURE_AWK_LIBM=y

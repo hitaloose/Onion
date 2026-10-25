@@ -61,6 +61,8 @@ void saveFakeAxpResult(int current_percentage);
 bool isCharging(void);
 int updateADCValue(int);
 int getBatPercMMP(void);
+int getBatPercRG35XX(void);
+int getBatPerc(void);
 int batteryPercentage(int);
 static void *batteryWarning_thread(void *param);
 void batteryWarning_show(void);

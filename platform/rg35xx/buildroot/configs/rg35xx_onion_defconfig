@@ -61,3 +61,7 @@ BR2_TARGET_ROOTFS_EXT2_MKFS_OPTIONS="-O ^64bit,^metadata_csum,^metadata_csum_see
 
 # Fonts and tools Onion expects in /customer/app on the Miyoo Mini
 BR2_PACKAGE_ONION_CUSTOMER=y
+BR2_PACKAGE_BUSYBOX_CONFIG_FRAGMENT_FILES="$(BR2_EXTERNAL_ONION_RG35XX_PATH)/board/busybox.fragment"
+# fsck.fat for Onion's SD card repair
+BR2_PACKAGE_DOSFSTOOLS=y
+BR2_PACKAGE_DOSFSTOOLS_FSCK_FAT=y

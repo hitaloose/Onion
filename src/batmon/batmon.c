@@ -36,8 +36,8 @@ int main(int argc, char *argv[])
                 // Charging just started
                 lowest_percentage_after_charge = 500; // Reset lowest percentage before charge
                 is_charging = true;
-                if (DEVICE_ID == MIYOO354) {
-                    current_percentage = getBatPercMMP();
+                if (DEVICE_ID == MIYOO354 || DEVICE_ID == RG35XX) {
+                    current_percentage = getBatPerc();
                     // To solve : Sometimes getBatPercMMP returns 1735289191
                     current_percentage = (current_percentage > 100) ? old_percentage : current_percentage;
                 }
@@ -72,8 +72,8 @@ int main(int argc, char *argv[])
                 current_percentage = batteryPercentage(adc_value_g);
                 saveFakeAxpResult(current_percentage);
             }
-            else if (DEVICE_ID == MIYOO354) {
-                current_percentage = getBatPercMMP();
+            else if (DEVICE_ID == MIYOO354 || DEVICE_ID == RG35XX) {
+                current_percentage = getBatPerc();
             }
             update_current_duration();
             log_new_percentage(current_percentage, is_charging);
@@ -95,8 +95,8 @@ int main(int argc, char *argv[])
                         current_percentage = lowest_percentage_after_charge;
                     }
                 }
-                else if (DEVICE_ID == MIYOO354) {
-                    current_percentage = getBatPercMMP();
+                else if (DEVICE_ID == MIYOO354 || DEVICE_ID == RG35XX) {
+                    current_percentage = getBatPerc();
                     // To solve : Sometimes getBatPercMMP returns 1735289191
                     current_percentage = (current_percentage > 100) ? old_percentage : current_percentage;
                 }
@@ -387,6 +387,21 @@ int getBatPercMMP(void)
     sscanf(buf, "{\"battery\":%d, \"voltage\":%*d, \"charging\":%*d}", &battery_number);
 
     return battery_number;
+}
+
+// The RG35XX fuel gauge driver reports the percentage itself
+int getBatPercRG35XX(void)
+{
+    int capacity = 0;
+    FILE *fp;
+    file_get(fp, "/sys/class/power_supply/battery/capacity", "%d", &capacity);
+    return capacity;
+}
+
+// Devices that report a percentage instead of a raw ADC value
+int getBatPerc(void)
+{
+    return DEVICE_ID == RG35XX ? getBatPercRG35XX() : getBatPercMMP();
 }
 
 typedef struct {
