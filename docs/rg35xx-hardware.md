@@ -41,7 +41,9 @@ RetroArch config, `strings` on its binaries). Facts marked **TODO** must be fill
 ## Display
 - **known**: 640x480, `/dev/fb0`, no rotation. HDMI mirrors via
   `/sys/devices/framebuffer.4/graphics/fb0/mirror_to_hdmi` when `/sys/class/switch/hdmi/state` is 1.
-- **known**: `owlfb`, 32bpp, `virtual_size` 640x960 (2 buffers), stride 2560, `pan` used for flipping.
+- **known**: `owlfb`, 32bpp, stride 2560, `pan` used for flipping. `virtual_size` is set by the running
+  app, not fixed: stock Garlic leaves 640x1440, a Garlic variant left 640x960 panned to 0,480, and
+  SDL 1.2 fbcon sets 640x960 at offset 0,0 on `SDL_SetVideoMode`.
 - **known**: pixel layout `rgba 8/0,8/8,8/16,0/24`: red is the low byte (ABGR8888 as a 32-bit word).
   The Miyoo is ARGB8888, so direct framebuffer writes (OSD, screenshots) must swap R and B.
 
@@ -83,7 +85,7 @@ RetroArch config, `strings` on its binaries). Facts marked **TODO** must be fill
 - **known**: our Buildroot image (glibc 2.41, headers 3.10) loop-mounts and runs in the chroot.
   The image must be built without `metadata_csum`, `metadata_csum_seed` and `orphan_file`: the 3.10
   ext4 driver refuses `metadata_csum_seed` ("unsupported optional features (2000)").
-- **known**: SDL 1.2 `fbcon` opens 640x480x32 and reports `Rshift=0 Gshift=8 Bshift=16`, so SDL itself
+- **known**: SDL 1.2 `fbcon` opens 640x480x32 (red/green/blue bars confirmed on screen) and reports `Rshift=0 Gshift=8 Bshift=16`, so SDL itself
   handles the pixel order. Keyboard input reaches SDL through the VT (`padmapd` -> `tty1`).
 - **known**: SDL fbcon must not run under a pty (e.g. a plain `adb shell`), or it reads keys from the
   pty. Taking the VT as controlling terminal sends SIGHUP, so the boot chain ignores HUP
