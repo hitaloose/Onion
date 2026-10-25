@@ -46,6 +46,13 @@ int battery_getPercentage(void)
 #endif
 #endif
 
+#ifdef PLATFORM_RG35XX
+    // Until batmon writes percBat, read the fuel gauge itself: a 0% here
+    // makes keymon close the game for low battery and shut down
+    if (percentage == -1)
+        file_get(fp, "/sys/class/power_supply/battery/capacity", "%d", &percentage);
+#endif
+
     if (percentage == -1)
         percentage = 0; // show zero when percBat not found
 

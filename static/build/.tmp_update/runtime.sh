@@ -826,6 +826,9 @@ init_system() {
     load_settings
 
     if is_rg35xx; then
+        # dmenu.bin boots with the performance governor
+        echo ondemand > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+
         ip addr add 127.0.0.1/8 dev lo
         ifconfig lo up
 
