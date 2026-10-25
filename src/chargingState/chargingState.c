@@ -132,7 +132,7 @@ int main(void)
     }
 
     // Prepare for Poll button input
-    input_fd = open("/dev/input/event0", O_RDONLY);
+    input_fd = open(HW_INPUT_DEVICE, O_RDONLY);
     memset(&fds, 0, sizeof(fds));
     fds[0].fd = input_fd;
     fds[0].events = POLLIN;
@@ -239,7 +239,7 @@ int main(void)
     SDL_FillRect(video, NULL, 0);
     SDL_Flip(video);
 
-#ifndef PLATFORM_MIYOOMINI
+#ifndef PLATFORM_DEVICE
     msleep(100);
 #endif
 
@@ -250,13 +250,13 @@ int main(void)
     SDL_Quit();
 
     if (turn_off) {
-#ifdef PLATFORM_MIYOOMINI
+#ifdef PLATFORM_DEVICE
         display_setScreen(false);
         system("shutdown; sleep 10");
 #endif
     }
     else {
-#ifdef PLATFORM_MIYOOMINI
+#ifdef PLATFORM_DEVICE
         display_setScreen(true);
         short_pulse();
 #endif

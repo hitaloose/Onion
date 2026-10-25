@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
         applyAllChanges(auto_update);
     }
 
-#ifndef PLATFORM_MIYOOMINI
+#ifndef PLATFORM_DEVICE
     msleep(200);
 #endif
 

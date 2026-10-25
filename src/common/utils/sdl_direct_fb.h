@@ -19,7 +19,7 @@ static bool _render_direct_to_fb = true;
 #else
 static bool _render_direct_to_fb = false;
 #endif
-static const char *INPUT_DEVICE = "/dev/input/event0";
+static const char *INPUT_DEVICE = HW_INPUT_DEVICE;
 static int _input_fd = -1;
 static struct pollfd _fds[1];
 static bool keyinput_disabled = false;
@@ -65,7 +65,7 @@ void render(void)
     if (_render_direct_to_fb) {
         int numBuffers = g_display.vinfo.yres_virtual / g_display.vinfo.yres;
         for (int b = 0; b < numBuffers; b++) {
-            display_writeBuffer(b, &g_display, (uint32_t *)screen->pixels, (rect_t){0, 0, screen->w, screen->h}, true, false);
+            display_writeBuffer(b, &g_display, (uint32_t *)screen->pixels, (rect_t){0, 0, screen->w, screen->h}, DISPLAY_ROTATED_180, false);
         }
     }
     else {

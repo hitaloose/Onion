@@ -1,0 +1,7 @@
+config BR2_PACKAGE_ONION_CUSTOMER
+	bool "onion-customer"
+	select BR2_PACKAGE_JQ # jsonval
+	help
+	  Recreates the parts of the Miyoo Mini /customer/app directory
+	  that Onion depends on: the Exo 2 Bold Italic and WenQuanYi
+	  Micro Hei fonts, and a jq based jsonval.

@@ -183,7 +183,7 @@ int main(int argc, char *argv[])
         render_showFullscreenMessage("LOADING", true);
     }
 
-#ifndef PLATFORM_MIYOOMINI
+#ifndef PLATFORM_DEVICE
     msleep(200);
 #endif
 

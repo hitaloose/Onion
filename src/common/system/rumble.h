@@ -18,6 +18,10 @@ static int short_timings[] = {0, 50, 100, 150};
 
 void rumble(bool enabled)
 {
+#ifdef PLATFORM_RG35XX
+    file_write("/sys/class/power_supply/battery/moto", enabled ? "1" : "0", 1);
+    return;
+#endif
     file_write("/sys/class/gpio/export", "48", 2);
     file_write("/sys/class/gpio/gpio48/direction", "out", 3);
     file_write("/sys/class/gpio/gpio48/value", enabled ? "0" : "1", 1);

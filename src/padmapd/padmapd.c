@@ -4,7 +4,7 @@
 // uinput as a keyboard with the Miyoo Mini keycodes (system/keymap_hw.h).
 // The kernel keyboard handler feeds this device to the active VT, so SDL 1.2
 // fbcon receives the same keys as on the Miyoo, and Onion tools can read the
-// virtual device through the INPUT_SYMLINK path.
+// virtual device through HW_INPUT_DEVICE.
 // The source devices are not grabbed, so /dev/input/js0 keeps working.
 
 #include <dirent.h>
@@ -21,7 +21,7 @@
 #include "system/keymap_hw.h"
 
 #define DEVICE_NAME "Onion Keyboard"
-#define INPUT_SYMLINK "/dev/input/onion-kbd"
+#define INPUT_SYMLINK HW_INPUT_DEVICE
 #define GAMEPAD_NAME "RG35XX Gamepad"
 #define POWER_NAME "atc260x_onoff"
 #define TRIGGER_THRESHOLD 127

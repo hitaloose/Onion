@@ -201,10 +201,10 @@ int main(int argc, char *argv[])
     bool key_changed = false;
     bool info_showned = false;
 
-#ifdef PLATFORM_MIYOOMINI
+#ifdef PLATFORM_DEVICE
     bool first_draw = true;
     int input_fd;
-    input_fd = open("/dev/input/event0", O_RDONLY);
+    input_fd = open(HW_INPUT_DEVICE, O_RDONLY);
     struct input_event ev;
     uint32_t shutdown_timer = 0;
 #endif
@@ -219,7 +219,7 @@ int main(int argc, char *argv[])
         acc_ticks += ticks - last_ticks;
         last_ticks = ticks;
 
-#ifdef PLATFORM_MIYOOMINI
+#ifdef PLATFORM_DEVICE
         if (!first_draw) {
             read(input_fd, &ev, sizeof(ev));
             int val = ev.value;
@@ -310,7 +310,7 @@ int main(int argc, char *argv[])
             battery_changed = false;
             info_showned = false;
 
-#ifdef PLATFORM_MIYOOMINI
+#ifdef PLATFORM_DEVICE
             first_draw = false;
 #endif
 
@@ -334,7 +334,7 @@ int main(int argc, char *argv[])
         free(pargs);
     }
 
-#ifdef PLATFORM_MIYOOMINI
+#ifdef PLATFORM_DEVICE
     close(input_fd);
 #endif
 
@@ -351,7 +351,7 @@ int main(int argc, char *argv[])
     SDL_FreeSurface(screen);
     SDL_FreeSurface(video);
 
-#ifndef PLATFORM_MIYOOMINI
+#ifndef PLATFORM_DEVICE
     msleep(200); // to clear SDL input on quit
 #endif
     SDL_Quit();

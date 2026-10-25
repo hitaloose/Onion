@@ -11,7 +11,13 @@
 #define GPIO_DIR1 "/sys/class/gpio/"
 #define GPIO_DIR2 "/sys/devices/gpiochip0/gpio/"
 #define PWM_DIR "/sys/devices/soc0/soc/1f003400.pwm/pwm/pwmchip0/"
+#ifdef PLATFORM_RG35XX
+#define BACKLIGHT_DIR "/sys/class/backlight/backlight.2/"
+#define BACKLIGHT_MAX 1024
+#define CPU_DIR "/sys/devices/system/cpu/cpu0/cpufreq/"
+#else
 #define CPU_DIR "/sys/devices/system/cpu/cpufreq/policy0/"
+#endif
 
 #define CPU_SCALING_MIN_FREQ CPU_DIR "scaling_min_freq"
 #define CPU_SCALING_GOVERNOR CPU_DIR "scaling_governor"
@@ -42,6 +48,20 @@ void system_powersave(bool enabled)
     static uint32_t saved_min_freq;
     static char saved_governor[16];
     FILE *fp;
+
+#ifdef PLATFORM_RG35XX
+    if (enabled) {
+        file_get(fp, CPU_SCALING_MIN_FREQ, "%u", &saved_min_freq);
+        file_get(fp, CPU_SCALING_GOVERNOR, "%15s", saved_governor);
+        file_put(fp, CPU_SCALING_MIN_FREQ, "%u", 0);
+        file_put(fp, CPU_SCALING_GOVERNOR, "%s", "powersave");
+    }
+    else {
+        file_put(fp, CPU_SCALING_GOVERNOR, "%s", saved_governor);
+        file_put(fp, CPU_SCALING_MIN_FREQ, "%u", saved_min_freq);
+    }
+    return;
+#endif
 
     if (enabled) {
         char buffer[128];

@@ -40,7 +40,7 @@ int battery_getPercentage(void)
         msleep(100);
     }
 
-#ifndef PLATFORM_MIYOOMINI
+#ifndef PLATFORM_DEVICE
 #ifdef LOG_DEBUG
     return 78;
 #endif
@@ -89,6 +89,11 @@ bool battery_isCharging(void)
         return charge_number == 3;
     }
     return false;
+#elif defined(PLATFORM_RG35XX)
+    FILE *fp;
+    int online = 0;
+    file_get(fp, "/sys/class/power_supply/battery/charger_online", "%d", &online);
+    return online == 1;
 #else
     return false;
 #endif

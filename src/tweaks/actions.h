@@ -485,11 +485,13 @@ void action_advancedSetLcdVoltage(void *pt)
     file_put(fp, LCD_VOLT_CONFIG, "%x", 0x0e);
 }
 
+#ifndef PLATFORM_RG35XX
 const char *action_LaunchKeyboardWrapper(const char *initial_value, const char *title)
 {
     const char *result = launch_keyboard(initial_value, title);
     all_changed = true;
     return result;
 }
+#endif
 
 #endif // TWEAKS_ACTIONS_H__

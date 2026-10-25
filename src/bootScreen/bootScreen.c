@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
 
     resources_free();
 
-#ifndef PLATFORM_MIYOOMINI
+#ifndef PLATFORM_DEVICE
     sleep(4); // for debugging purposes
 #endif
 

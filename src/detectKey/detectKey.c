@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "system/keymap_hw.h"
 #include "utils/log.h"
 
 int main(int argc, char *argv[])
@@ -14,7 +15,7 @@ int main(int argc, char *argv[])
 
     int key = atoi(argv[1]);
 
-    FILE *kbd = fopen("/dev/input/event0", "r");
+    FILE *kbd = fopen(HW_INPUT_DEVICE, "r");
 
     char key_map[KEY_MAX / 8 + 1];
     memset(key_map, 0, sizeof(key_map));

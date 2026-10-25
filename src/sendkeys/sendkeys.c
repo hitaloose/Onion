@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include "system/keymap_hw.h"
 #include "utils/log.h"
 
 int main(int argc, char *argv[])
@@ -26,7 +27,7 @@ int main(int argc, char *argv[])
     }
 
     int input_fd;
-    input_fd = open("/dev/input/event0", O_WRONLY);
+    input_fd = open(HW_INPUT_DEVICE, O_WRONLY);
 
     for (int j = 0; j < num_events; j++) {
         printf_debug("sendkeys: code = %d, value = %d\n", events[j].code,

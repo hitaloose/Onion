@@ -262,19 +262,19 @@ static int _bar_timer = 0;
 static int _bar_value = 0;
 static int _bar_max = 0;
 static uint32_t _bar_color = 0x00FFFFFF;
-#ifdef PLATFORM_MIYOOMINI
+#ifdef PLATFORM_DEVICE
 static uint32_t *_bar_savebuf;
 #endif
 
 void _print_bar(void)
 {
-#ifdef PLATFORM_MIYOOMINI
+#ifdef PLATFORM_DEVICE
     uint32_t *ofs = g_display.fb_addr;
     uint32_t i, j, curr, percentage = _bar_max > 0 ? _bar_value * g_display.height / _bar_max : 0;
 
     ofs += g_display.width - meterWidth;
     for (i = 0; i < g_display.height * 3; i++, ofs += g_display.width) {
-        curr = (i % g_display.height) < percentage ? _bar_color : 0;
+        curr = (i % g_display.height) < percentage ? display_fbColor(_bar_color) : 0;
         for (j = 0; j < meterWidth; j++)
             ofs[j] = curr;
     }
@@ -283,7 +283,7 @@ void _print_bar(void)
 
 void _bar_restoreBufferBehind(void)
 {
-#ifdef PLATFORM_MIYOOMINI
+#ifdef PLATFORM_DEVICE
     _bar_value = 0;
     _bar_max = 0;
     _bar_color = 0;
@@ -304,7 +304,7 @@ void _bar_restoreBufferBehind(void)
 
 void _bar_saveBufferBehind(void)
 {
-#ifdef PLATFORM_MIYOOMINI
+#ifdef PLATFORM_DEVICE
     // Save display area and clear
     if ((_bar_savebuf = (uint32_t *)malloc(g_display.width * g_display.height *
                                            sizeof(uint32_t)))) {

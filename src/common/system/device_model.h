@@ -6,6 +6,7 @@
 
 #define MIYOO283 283
 #define MIYOO354 354
+#define RG35XX 35 // Anbernic RG35XX (original)
 
 static int DEVICE_ID;
 static char DEVICE_SN[13];

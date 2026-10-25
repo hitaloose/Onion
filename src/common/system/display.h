@@ -11,12 +11,19 @@
 #include "utils/file.h"
 #include "utils/log.h"
 
-#ifdef PLATFORM_MIYOOMINI
+#ifdef PLATFORM_DEVICE
 #define DEFAULT_WIDTH 640
 #define DEFAULT_HEIGHT 480
 #else
 #define DEFAULT_WIDTH 752
 #define DEFAULT_HEIGHT 560
+#endif
+
+// The Miyoo Mini panel is mounted upside down
+#ifdef PLATFORM_RG35XX
+#define DISPLAY_ROTATED_180 false
+#else
+#define DISPLAY_ROTATED_180 true
 #endif
 
 #define display_on() display_setScreen(true)
@@ -60,6 +67,17 @@ typedef struct Rect {
     int w;
     int h;
 } rect_t;
+
+// Converts a 0xAARRGGBB color to the framebuffer pixel layout
+static inline uint32_t display_fbColor(uint32_t argb)
+{
+#ifdef PLATFORM_RG35XX
+    // owlfb stores red in the low byte (0xAABBGGRR)
+    return (argb & 0xFF00FF00) | ((argb >> 16) & 0xFF) | ((argb & 0xFF) << 16);
+#else
+    return argb;
+#endif
+}
 
 void display_clear(void)
 {
@@ -188,6 +206,18 @@ void display_free(display_t *display)
 //
 void display_setScreen(bool enabled)
 {
+#ifdef PLATFORM_RG35XX
+    // FB_BLANK_UNBLANK / FB_BLANK_POWERDOWN
+    file_write(BACKLIGHT_DIR "bl_power", enabled ? "0" : "4", 1);
+
+    if (enabled)
+        display_restore();
+    else
+        display_save();
+    g_display.enabled = enabled;
+    return;
+#endif
+
     // export gpio4, direction: out
     file_write(GPIO_DIR1 "export", "4", 1);
     file_write(GPIO_DIR2 "gpio4/direction", "out", 3);
@@ -218,6 +248,13 @@ uint32_t display_getBrightnessRaw()
     uint32_t duty_cycle = 0;
     FILE *fp;
 
+#ifdef PLATFORM_RG35XX
+    // Scaled to the 0-100 duty cycle range used by the Miyoo curve below
+    uint32_t brightness = 0;
+    file_get(fp, BACKLIGHT_DIR "brightness", "%u", &brightness);
+    return round(brightness * 100.0 / BACKLIGHT_MAX);
+#endif
+
     if (exists(PWM_DIR "pwm0/duty_cycle")) {
         file_get(fp, PWM_DIR "pwm0/duty_cycle", "%u", &duty_cycle);
     }
@@ -237,7 +274,12 @@ int display_getBrightnessFromRaw()
 void display_setBrightnessRaw(uint32_t value)
 {
     FILE *fp;
+#ifdef PLATFORM_RG35XX
+    // value is a 0-100 duty cycle, as on the Miyoo
+    file_put_sync(fp, BACKLIGHT_DIR "brightness", "%u", (uint32_t)round(value * BACKLIGHT_MAX / 100.0));
+#else
     file_put_sync(fp, PWM_DIR "pwm0/duty_cycle", "%u", value);
+#endif
     printf_debug("Raw brightness: %d\n", value);
 }
 
@@ -258,6 +300,7 @@ void display_setBrightness(uint32_t value)
  *
  * This function reads from or writes to a specific buffer in the framebuffer.
  * It supports optional rotation of the buffer content.
+ * Pixel data is 0xAARRGGBB and is converted to the framebuffer layout.
  *
  * @param index The index of the buffer to read/write.
  * @param display The display structure.
@@ -300,7 +343,7 @@ void display_readOrWriteBuffer(int index, display_t *display, uint32_t *pixels, 
                     }
                 }
                 else {
-                    display->fb_addr[offset] = pixels[index];
+                    display->fb_addr[offset] = display_fbColor(pixels[index]);
                 }
             }
             else {
@@ -308,7 +351,8 @@ void display_readOrWriteBuffer(int index, display_t *display, uint32_t *pixels, 
                     pixels[index] = display->fb_addr[offset] == 0 ? 1 : 0;
                 }
                 else {
-                    pixels[index] = display->fb_addr[offset];
+                    // display_fbColor only swaps red and blue, so it also converts back
+                    pixels[index] = display_fbColor(display->fb_addr[offset]);
                 }
             }
         }
@@ -430,6 +474,7 @@ void display_writeBuffers(display_t *display, uint32_t **pixels, rect_t rect, bo
 //
 void display_drawFrame(uint32_t color)
 {
+    color = display_fbColor(color);
     uint32_t *ofs = g_display.fb_addr;
     uint32_t i;
     for (i = 0; i < 640; i++) {
@@ -460,6 +505,8 @@ void display_drawFrame(uint32_t color)
 void display_drawBatteryIcon(uint32_t color, int x, int y, int level,
                              uint32_t fillColor)
 {
+    color = display_fbColor(color);
+    fillColor = display_fbColor(fillColor);
     uint32_t *ofs = g_display.fb_addr;
     int i, j;
 

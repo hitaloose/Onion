@@ -1,0 +1,4 @@
+#!/bin/sh
+# Replacement for the Miyoo /customer/app/jsonval: prints one top-level value
+# of the system settings. Usage: jsonval <key>
+exec jq -r --arg key "$1" '.[$key] // empty' /appconfigs/system.json

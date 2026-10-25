@@ -3,6 +3,13 @@
 
 #include <linux/input.h>
 
+// evdev device that delivers the keys below
+#ifdef PLATFORM_RG35XX
+#define HW_INPUT_DEVICE "/dev/input/onion-kbd" // uinput keyboard made by padmapd
+#else
+#define HW_INPUT_DEVICE "/dev/input/event0"
+#endif
+
 // for use with input_event: event.code
 #define HW_BTN_UP KEY_UP
 #define HW_BTN_DOWN KEY_DOWN

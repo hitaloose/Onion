@@ -50,6 +50,11 @@ endif
 CXXFLAGS := $(CFLAGS)
 LDFLAGS := $(LDFLAGS) -L../../lib -L/usr/local/lib
 
+# Real hardware, as opposed to the desktop build used for development
+ifneq (,$(filter miyoomini rg35xx,$(PLATFORM)))
+CFLAGS := $(CFLAGS) -DPLATFORM_DEVICE
+endif
+
 ifeq ($(PLATFORM),miyoomini)
 CFLAGS := $(CFLAGS) -marm -mtune=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard -march=armv7ve -Wl,-rpath=$(LIB)
 
@@ -62,11 +67,6 @@ endif
 # RG35XX (original): Cortex-A9 has no hardware divide and the prebuilt armv7ve
 # libraries in ../../lib may use it, so link the rebuilt ones in lib/rg35xx
 ifeq ($(PLATFORM),rg35xx)
-CFLAGS := $(CFLAGS) -marm -mcpu=cortex-a9 -mfpu=neon -mfloat-abi=hard -Wl,-rpath=$(LIB)
-LDFLAGS := -L../../lib/rg35xx $(filter-out -L../../lib,$(LDFLAGS))
-
-ifdef INCLUDE_SHMVAR
-LDFLAGS := $(LDFLAGS) -lshmvar
-endif
-
+CFLAGS := -I../../platform/rg35xx/include $(CFLAGS) -marm -mcpu=cortex-a9 -mfpu=neon -mfloat-abi=hard -Wl,-rpath=$(LIB)
+LDFLAGS := -L../../lib/rg35xx $(filter-out -L../../lib -L/usr/local/lib,$(LDFLAGS))
 endif

@@ -24,7 +24,7 @@ bool renameFile(const char *dir_path, const char *file_ext,
 
     if (is_file(old_path)) {
         printf_debug("\nrename: '%s'\n     -> '%s'\n", old_path, new_path);
-#ifdef PLATFORM_MIYOOMINI
+#ifdef PLATFORM_DEVICE
         if (rename(old_path, new_path) == 0) {
             print_debug("File renamed successfully.");
         }

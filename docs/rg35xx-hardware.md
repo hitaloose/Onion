@@ -65,11 +65,14 @@ RetroArch config, `strings` on its binaries). Facts marked **TODO** must be fill
 - **known**: volume is `/sys/class/volume/value` (40 on a fresh boot).
 - **known**: the value stays the same after pressing VOL+ (tested with `padmapd` running), so the kernel
   does not change it by itself: keymon must write it.
-- **TODO**: its range (write test values and listen).
+- **known**: range 0..40; out-of-range writes are rejected and the old value stays. Listening test:
+  40 -> 20 -> 5 -> 0 is clearly quieter at each step, so this is the volume control to use.
+- **known**: `DAC FL Gain`/`DAC FR Gain` (0..255, boots at 181) made no audible difference between
+  255, 120 and 40; leave them alone.
 - **known**: ALSA mixer (`amixer scontrols` in our rootfs) has no `Master`. Output-related controls:
   `DAC FL Gain`, `DAC FR Gain`, `DAC Digital FL FR`, `DAC FL FR PLAYBACK`, `DAC PA`,
   `DAC PA OUTPUT Stage`, `speaker on off switch`, `audio output mode switch`, `PA Output Swing Mux`.
-  **TODO**: which one `/sys/class/volume/value` drives, and which to use for volume.
+  Writing `/sys/class/volume/value` changes none of them (`Dummy speaker volume` stays at 40).
 
 ## CPU
 - **known**: hotplug mask `/sys/devices/system/cpu/autoplug/plug_mask` (0xF = all cores on);

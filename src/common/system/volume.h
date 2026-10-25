@@ -8,13 +8,58 @@
 #include "utils/file.h"
 
 #define MAX_VOLUME 20
+
+#ifdef PLATFORM_RG35XX
+// The codec volume is a 0-40 kernel attribute (0 is silent)
+#define VOLUME_PATH "/sys/class/volume/value"
+#define MIN_RAW_VALUE 0
+#define MAX_RAW_VALUE 40
+#else
 #define MIN_RAW_VALUE -60
 #define MAX_RAW_VALUE 30
+#endif
 
 #define MI_AO_SETVOLUME 0x4008690b
 #define MI_AO_GETVOLUME 0xc008690c
 #define MI_AO_SETMUTE 0x4008690d
 
+#ifdef PLATFORM_RG35XX
+// Set volume output between 0 and 40, use `add` for boosting
+int setVolumeRaw(int value, int add)
+{
+    FILE *fp;
+    int prev_value = 0;
+
+    file_get(fp, VOLUME_PATH, "%d", &prev_value);
+
+    if (add)
+        value = prev_value + add;
+
+    if (value > MAX_RAW_VALUE)
+        value = MAX_RAW_VALUE;
+    else if (value < MIN_RAW_VALUE)
+        value = MIN_RAW_VALUE;
+
+    if (value != prev_value) {
+        file_put(fp, VOLUME_PATH, "%d", value);
+        printf_debug("raw volume: %d\n", value);
+    }
+
+    return value;
+}
+
+// Increments between 0 and 20
+int setVolume(int volume)
+{
+    if (volume > MAX_VOLUME)
+        volume = MAX_VOLUME;
+    else if (volume < 0)
+        volume = 0;
+
+    setVolumeRaw(volume * MAX_RAW_VALUE / MAX_VOLUME, 0);
+    return volume;
+}
+#else
 // Set volume output between 0 and 60, use `add` for boosting
 int setVolumeRaw(int value, int add)
 {
@@ -80,6 +125,7 @@ int setVolume(int volume)
     setVolumeRaw(volume_raw, 0);
     return volume;
 }
+#endif
 
 /*
 VOLUME CURVE (later corrected to rise to 63)

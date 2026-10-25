@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
             ticks = -1;
         }
 
-#ifdef PLATFORM_MIYOOMINI
+#ifdef PLATFORM_DEVICE
         if (is_suspended || current_percentage == 500) {
             batteryWarning_hide();
         }

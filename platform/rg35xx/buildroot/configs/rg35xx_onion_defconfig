@@ -58,3 +58,6 @@ BR2_TARGET_ROOTFS_EXT2_LABEL="onion"
 # The stock 3.10 kernel cannot mount images with these newer ext4 features
 BR2_TARGET_ROOTFS_EXT2_MKFS_OPTIONS="-O ^64bit,^metadata_csum,^metadata_csum_seed,^orphan_file"
 # BR2_TARGET_ROOTFS_TAR is not set
+
+# Fonts and tools Onion expects in /customer/app on the Miyoo Mini
+BR2_PACKAGE_ONION_CUSTOMER=y

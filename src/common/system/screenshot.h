@@ -77,6 +77,12 @@ uint32_t *__screenshot_buffer(void)
     ioctl(fb_fd, FBIOGET_VSCREENINFO, &g_display.vinfo);
     memcpy(buffer, g_display.fb_addr + DISPLAY_WIDTH * g_display.vinfo.yoffset, buffer_size);
 
+#ifdef PLATFORM_RG35XX
+    // display_fbColor swaps red and blue, so it also converts back to ARGB
+    for (size_t i = 0; i < DISPLAY_WIDTH * DISPLAY_HEIGHT; i++)
+        buffer[i] = display_fbColor(buffer[i]);
+#endif
+
     return buffer;
 }
 
@@ -153,7 +159,7 @@ bool __screenshot_perform(bool(get_path)(char *), pid_t p_id)
     }
 
     if (get_path(path)) {
-        retval = screenshot_save(buffer, path, true);
+        retval = screenshot_save(buffer, path, DISPLAY_ROTATED_180);
     }
 
     free(buffer);
