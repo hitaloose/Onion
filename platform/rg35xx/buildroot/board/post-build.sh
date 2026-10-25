@@ -3,3 +3,6 @@
 set -e
 TARGET_DIR="$1"
 mkdir -p "$TARGET_DIR/misc" "$TARGET_DIR/mnt/SDCARD" "$TARGET_DIR/mnt/SDCARD2" "$TARGET_DIR/dev/pts"
+
+# Onion scripts call 7z
+ln -sf 7za "$TARGET_DIR/usr/bin/7z"

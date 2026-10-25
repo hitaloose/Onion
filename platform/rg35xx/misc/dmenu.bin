@@ -66,6 +66,10 @@ mount -o bind /mnt/SDCARD2 $ROOTFS/mnt/SDCARD2
     done
 ) &
 
+# SDL fbcon takes the active VT as its controlling terminal, which sends SIGHUP
+# to the process; the ignored disposition is inherited by everything below
+trap '' HUP
+
 export PATH=/usr/sbin:/usr/bin:/sbin:/bin
 export HOME=/mnt/SDCARD
 export SHELL=/bin/sh

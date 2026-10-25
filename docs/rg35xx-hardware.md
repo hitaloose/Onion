@@ -64,7 +64,10 @@ RetroArch config, `strings` on its binaries). Facts marked **TODO** must be fill
 - **known**: the value stays the same after pressing VOL+ (tested with `padmapd` running), so the kernel
   does not change it by itself: keymon must write it.
 - **TODO**: its range (write test values and listen).
-- **TODO**: ALSA mixer control names (no `amixer` on stock or Garlic; check with our rootfs).
+- **known**: ALSA mixer (`amixer scontrols` in our rootfs) has no `Master`. Output-related controls:
+  `DAC FL Gain`, `DAC FR Gain`, `DAC Digital FL FR`, `DAC FL FR PLAYBACK`, `DAC PA`,
+  `DAC PA OUTPUT Stage`, `speaker on off switch`, `audio output mode switch`, `PA Output Swing Mux`.
+  **TODO**: which one `/sys/class/volume/value` drives, and which to use for volume.
 
 ## CPU
 - **known**: hotplug mask `/sys/devices/system/cpu/autoplug/plug_mask` (0xF = all cores on);
@@ -75,6 +78,18 @@ RetroArch config, `strings` on its binaries). Facts marked **TODO** must be fill
 ## Suspend
 - **known**: `/sys/power/state` offers `freeze mem disk`; `wake_lock` and `autosleep` exist (Android PM).
   **TODO**: whether `mem` resumes correctly and which key wakes it.
+
+## Rootfs (Phase 1, tested on device)
+- **known**: our Buildroot image (glibc 2.41, headers 3.10) loop-mounts and runs in the chroot.
+  The image must be built without `metadata_csum`, `metadata_csum_seed` and `orphan_file`: the 3.10
+  ext4 driver refuses `metadata_csum_seed` ("unsupported optional features (2000)").
+- **known**: SDL 1.2 `fbcon` opens 640x480x32 and reports `Rshift=0 Gshift=8 Bshift=16`, so SDL itself
+  handles the pixel order. Keyboard input reaches SDL through the VT (`padmapd` -> `tty1`).
+- **known**: SDL fbcon must not run under a pty (e.g. a plain `adb shell`), or it reads keys from the
+  pty. Taking the VT as controlling terminal sends SIGHUP, so the boot chain ignores HUP
+  (`trap '' HUP` in `misc/dmenu.bin`).
+- **known**: inside the chroot, run commands with `PATH=/usr/sbin:/usr/bin:/sbin:/bin`; the Android
+  PATH is inherited otherwise.
 
 ## RTC
 - **known**: `/dev/rtc0`.

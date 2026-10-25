@@ -8,9 +8,10 @@ BR2_ARM_EABIHF=y
 
 # Toolchain: glibc, headers matching the stock kernel (it cannot be replaced)
 BR2_TOOLCHAIN_BUILDROOT_GLIBC=y
-BR2_KERNEL_HEADERS_3_10=y
+BR2_KERNEL_HEADERS_VERSION=y
+BR2_DEFAULT_KERNEL_VERSION="3.10.108"
+BR2_PACKAGE_HOST_LINUX_HEADERS_CUSTOM_3_10=y
 BR2_TOOLCHAIN_BUILDROOT_CXX=y
-BR2_TOOLCHAIN_BUILDROOT_WCHAR=y
 BR2_PACKAGE_HOST_GDB=y
 
 # System: no init of its own, it runs chrooted under the stock Android-style init
@@ -44,9 +45,9 @@ BR2_PACKAGE_ALSA_UTILS_APLAY=y
 BR2_PACKAGE_ZLIB=y
 BR2_PACKAGE_SQLITE=y
 BR2_PACKAGE_JQ=y
-BR2_PACKAGE_7ZIP=y
+BR2_PACKAGE_P7ZIP=y
+BR2_PACKAGE_P7ZIP_7ZA=y
 BR2_PACKAGE_EVTEST=y
-BR2_PACKAGE_FBSET=y
 BR2_PACKAGE_GDB=y
 
 # Output: ext4 image loop-mounted by misc/dmenu.bin
@@ -54,4 +55,6 @@ BR2_TARGET_ROOTFS_EXT2=y
 BR2_TARGET_ROOTFS_EXT2_4=y
 BR2_TARGET_ROOTFS_EXT2_SIZE="256M"
 BR2_TARGET_ROOTFS_EXT2_LABEL="onion"
+# The stock 3.10 kernel cannot mount images with these newer ext4 features
+BR2_TARGET_ROOTFS_EXT2_MKFS_OPTIONS="-O ^64bit,^metadata_csum,^metadata_csum_seed,^orphan_file"
 # BR2_TARGET_ROOTFS_TAR is not set

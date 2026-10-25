@@ -1,18 +1,32 @@
 #!/bin/sh
-# Builds the Onion RG35XX rootfs image and SDK.
-# Usage: platform/rg35xx/buildroot/build.sh [buildroot-dir]
-# Output: <buildroot-dir>/output/images/rootfs.ext4 (copy it to .tmp_update/rootfs.img)
-#         <buildroot-dir>/output/images/arm-buildroot-linux-gnueabihf_sdk-buildroot.tar.gz
+# Builds the Onion RG35XX rootfs image and SDK inside the rg35xx-toolchain image.
+# Usage (from the repo root): platform/rg35xx/buildroot/build.sh
+# Output: cache/rg35xx/rootfs.img (copy it to .tmp_update/rootfs.img on the card)
+#         cache/rg35xx/arm-buildroot-linux-gnueabihf_sdk-buildroot.tar.gz
+# The Buildroot tree lives in the onion-rg35xx-br Docker volume, because Buildroot
+# needs a case-sensitive filesystem; the build log is /work/build.log in it.
 set -e
-BR_VERSION=2025.02.7
-EXTERNAL="$(cd "$(dirname "$0")" && pwd)"
-BR_DIR="${1:-$EXTERNAL/../../../cache/buildroot-$BR_VERSION}"
+BR_VERSION=2025.02.19
+VOLUME=onion-rg35xx-br
+PLATFORM_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+OUT_DIR="$PLATFORM_DIR/../../cache/rg35xx"
 
-if [ ! -d "$BR_DIR" ]; then
-    mkdir -p "$(dirname "$BR_DIR")"
-    curl -L "https://buildroot.org/downloads/buildroot-$BR_VERSION.tar.xz" | tar -xJ -C "$(dirname "$BR_DIR")"
-fi
+docker build -q -t rg35xx-toolchain "$PLATFORM_DIR/toolchain" > /dev/null
+docker volume create $VOLUME > /dev/null
+mkdir -p "$OUT_DIR"
 
-make -C "$BR_DIR" BR2_EXTERNAL="$EXTERNAL" rg35xx_onion_defconfig
-make -C "$BR_DIR"
-make -C "$BR_DIR" sdk
+docker run --rm \
+    -v $VOLUME:/work \
+    -v "$PLATFORM_DIR/buildroot":/external:ro \
+    -v "$OUT_DIR":/out \
+    rg35xx-toolchain sh -c "
+set -e
+[ -d buildroot-$BR_VERSION ] || curl -sL https://buildroot.org/downloads/buildroot-$BR_VERSION.tar.xz | tar -xJ
+cd buildroot-$BR_VERSION
+make -s BR2_EXTERNAL=/external rg35xx_onion_defconfig
+make -j\$(nproc) > /work/build.log 2>&1 || { tail -60 /work/build.log; exit 1; }
+make sdk >> /work/build.log 2>&1 || { tail -60 /work/build.log; exit 1; }
+cp output/images/rootfs.ext4 /out/rootfs.img
+cp output/images/*_sdk-buildroot.tar.gz /out/
+"
+ls -l "$OUT_DIR"
