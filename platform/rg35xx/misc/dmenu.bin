@@ -1,0 +1,78 @@
+#!/system/bin/sh
+# Onion boot hook for the Anbernic RG35XX (original).
+# Replaces the stock /misc/dmenu.bin: mounts Onion's rootfs image, chroots into it
+# and starts the Onion runtime. The roms partition (/mnt/mmc on the stock system)
+# is exposed as /mnt/SDCARD inside the chroot so every Onion path keeps working.
+
+SDCARD=/mnt/mmc
+SYSDIR=$SDCARD/.tmp_update
+
+# Disable CPU hotplug and boost the boot
+echo 0xF > /sys/devices/system/cpu/autoplug/plug_mask
+echo performance > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+
+# The IO scheduler and card power-saving only slow down MicroSD access
+echo noop > /sys/devices/b0238000.mmc/mmc_host/mmc0/emmc_boot_card/block/mmcblk0/queue/scheduler
+echo noop > /sys/devices/b0230000.mmc/mmc_host/mmc1/sd_card/block/mmcblk1/queue/scheduler
+echo on > /sys/devices/b0238000.mmc/mmc_host/mmc0/power/control
+echo on > /sys/devices/b0230000.mmc/mmc_host/mmc1/power/control
+
+# Without the Onion system there is nothing to boot: fall back to the stock menu
+if [ ! -f $SYSDIR/rootfs.img ]; then
+    if [ -x /misc/dmenu.bin.stock ]; then
+        exec /misc/dmenu.bin.stock
+    fi
+    exit 1
+fi
+
+# Mount the second MicroSD card (TF2)
+mkdir -p /mnt/SDCARD2
+if [ -e /dev/block/mmcblk1p1 ]; then
+    SDCARD2_DEVICE=/dev/block/mmcblk1p1
+else
+    SDCARD2_DEVICE=/dev/block/mmcblk1
+fi
+mount -t vfat -o rw,utf8,noatime $SDCARD2_DEVICE /mnt/SDCARD2 ||
+    mount -t exfat -o rw,utf8,noatime $SDCARD2_DEVICE /mnt/SDCARD2
+
+if [ -f /misc/waitForUSB ]; then
+    sleep 5
+fi
+
+if [ -f /misc/enableADB ]; then
+    /usbdbg.sh device
+fi
+
+# Mount the Onion rootfs
+ROOTFS=/onion
+LOOPDEVICE=/dev/block/loop7
+mkdir -p $ROOTFS
+busybox losetup $LOOPDEVICE $SYSDIR/rootfs.img
+mount -r -w -o loop -t ext4 $LOOPDEVICE $ROOTFS
+
+for f in dev dev/pts proc sys misc; do
+    mkdir -p $ROOTFS/$f
+    mount -o bind /$f $ROOTFS/$f
+done
+mkdir -p $ROOTFS/mnt/SDCARD $ROOTFS/mnt/SDCARD2
+mount -o bind $SDCARD $ROOTFS/mnt/SDCARD
+mount -o bind /mnt/SDCARD2 $ROOTFS/mnt/SDCARD2
+
+# Mirror the screen to HDMI while it is plugged in
+(
+    while true; do
+        cat /sys/class/switch/hdmi/state > /sys/devices/framebuffer.4/graphics/fb0/mirror_to_hdmi
+        sleep 2
+    done
+) &
+
+export PATH=/usr/sbin:/usr/bin:/sbin:/bin
+export HOME=/mnt/SDCARD
+export SHELL=/bin/sh
+export SDL_NOMOUSE=1
+busybox chroot $ROOTFS /bin/sh /mnt/SDCARD/.tmp_update/updater
+
+# Keep the stock dmenu from respawning
+while true; do
+    sleep 5
+done
