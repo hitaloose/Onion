@@ -96,5 +96,12 @@ RetroArch config, `strings` on its binaries). Facts marked **TODO** must be fill
 - **known**: inside the chroot, run commands with `PATH=/usr/sbin:/usr/bin:/sbin:/bin`; the Android
   PATH is inherited otherwise.
 
+## SDL fbcon and the VT
+- **known**: running as root, SDL 1.2 fbcon opens a free VT (`VT_OPENQRY`), switches to it, sets
+  `KD_GRAPHICS` and `VT_PROCESS` mode, and switches back only on a clean exit. A crash leaves that
+  VT active, and the next SDL program (or `chvt`) blocks forever in `VT_WAITACTIVE` with a black
+  screen. `platform/rg35xx/tools/vtreset.c` resets the active VT to `VT_AUTO`/`KD_TEXT` and
+  activates tty1; the runtime must run it after a program crashes and at boot.
+
 ## RTC
 - **known**: `/dev/rtc0`.
