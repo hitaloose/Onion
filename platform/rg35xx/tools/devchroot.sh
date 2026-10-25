@@ -10,6 +10,8 @@
 #   devchroot.sh run CMD...    run CMD detached from the adb pty (SDL needs the VT)
 #                              and print its output when it exits
 #   devchroot.sh shell CMD...  run CMD in the chroot attached to adb (no SDL)
+#   devchroot.sh reboot        sync, remount the card read-only and reboot
+#                              (adb reboot leaves the FAT partition dirty)
 set -e
 
 ROOT=/onion
@@ -59,6 +61,9 @@ umount)
 run)
     shift
     adb shell "$B setsid $CHROOT nohup /bin/sh -c '$*' > /mnt/mmc/.tmp_update/devchroot.log 2>&1 < /dev/null & wait \$!; echo exit=\$?; cat /mnt/mmc/.tmp_update/devchroot.log"
+    ;;
+reboot)
+    adb shell "sync; mount -o remount,ro /mnt/mmc && $B reboot -f"
     ;;
 shell)
     shift

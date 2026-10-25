@@ -30,6 +30,9 @@ int main(int argc, char *argv[])
     snprintf(path, sizeof(path), "/dev/tty%d", state.v_active);
     int active = open(path, O_RDWR);
     if (active >= 0) {
+        // A switch requested while the owner was dying waits for an
+        // acknowledgement that never comes; give it (fails if none is pending)
+        ioctl(active, VT_RELDISP, 1);
         if (ioctl(active, VT_SETMODE, &mode) < 0)
             perror("vtreset: VT_SETMODE");
         if (ioctl(active, KDSETMODE, KD_TEXT) < 0)

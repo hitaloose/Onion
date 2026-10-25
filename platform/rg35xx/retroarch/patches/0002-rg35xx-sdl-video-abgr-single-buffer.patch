@@ -1,5 +1,5 @@
---- a/gfx/drivers/sdl_gfx.c	2026-10-25 21:58:34.988113011 +0000
-+++ b/gfx/drivers/sdl_gfx.c	2026-10-25 21:58:34.998207470 +0000
+--- a/gfx/drivers/sdl_gfx.c	2026-10-25 22:41:50.536526087 +0000
++++ b/gfx/drivers/sdl_gfx.c	2026-10-25 22:41:50.552021337 +0000
 @@ -278,8 +278,15 @@
     if (!video->fullscreen)
        RARCH_LOG("[SDL] Creating window @ %ux%u.\n", video->width, video->height);
@@ -16,14 +16,29 @@
  
     /* We assume that SDL chooses ARGB8888.
      * Assuming this simplifies the driver *a ton*.
-@@ -322,7 +329,9 @@
+@@ -320,9 +327,13 @@
+          msg_color_g,
+          msg_color_b);
  
-    vid->scaler.scaler_type      = video->smooth ? SCALER_TYPE_BILINEAR : SCALER_TYPE_POINT;
+-   vid->scaler.scaler_type      = video->smooth ? SCALER_TYPE_BILINEAR : SCALER_TYPE_POINT;
     vid->scaler.in_fmt           = video->rgb32 ? SCALER_FMT_ARGB8888 : SCALER_FMT_RGB565;
 -   vid->scaler.out_fmt          = SCALER_FMT_ARGB8888;
 +   /* Some framebuffers (e.g. owlfb) store red in the low byte */
 +   vid->scaler.out_fmt          = vid->screen->format->Rshift == 0
 +      ? SCALER_FMT_ABGR8888 : SCALER_FMT_ARGB8888;
++   /* The bilinear scaler does not reach the screen with an ABGR8888 output */
++   vid->scaler.scaler_type      = video->smooth && vid->scaler.out_fmt == SCALER_FMT_ARGB8888
++      ? SCALER_TYPE_BILINEAR : SCALER_TYPE_POINT;
  
     vid->menu.scaler             = vid->scaler;
     vid->menu.scaler.scaler_type = SCALER_TYPE_BILINEAR;
+@@ -368,7 +379,8 @@
+    bool menu_is_alive = (video_info->menu_st_flags & MENU_ST_FLAG_ALIVE) ? true : false;
+ #endif
+ 
+-   if (!vid)
++   /* NULL is a duped frame: keep what is on screen */
++   if (!vid || (!frame && !vid->menu.active))
+       return true;
+ 
+    title[0] = '\0';
