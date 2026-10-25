@@ -6,6 +6,8 @@
 
 SDCARD=/mnt/mmc
 SYSDIR=$SDCARD/.tmp_update
+# The PATH below is the rootfs one, so call the stock busybox by its path
+BUSYBOX=/system/bin/busybox
 
 # Disable CPU hotplug and boost the boot
 echo 0xF > /sys/devices/system/cpu/autoplug/plug_mask
@@ -47,7 +49,7 @@ fi
 ROOTFS=/onion
 LOOPDEVICE=/dev/block/loop7
 mkdir -p $ROOTFS
-busybox losetup $LOOPDEVICE $SYSDIR/rootfs.img
+$BUSYBOX losetup $LOOPDEVICE $SYSDIR/rootfs.img
 mount -r -w -o loop -t ext4 $LOOPDEVICE $ROOTFS
 
 for f in dev dev/pts proc sys misc; do
@@ -74,7 +76,7 @@ export PATH=/usr/sbin:/usr/bin:/sbin:/bin
 export HOME=/mnt/SDCARD
 export SHELL=/bin/sh
 export SDL_NOMOUSE=1
-busybox chroot $ROOTFS /bin/sh /mnt/SDCARD/.tmp_update/updater
+$BUSYBOX chroot $ROOTFS /bin/sh /mnt/SDCARD/.tmp_update/updater
 
 # Keep the stock dmenu from respawning
 while true; do
