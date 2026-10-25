@@ -50,6 +50,7 @@ mkdir -p "$BIN_DIR"
         make -s -C src/\$p BUILD_DIR=/src/cache/rg35xx/bin VERSION=$VERSION
     done
     \${CROSS_COMPILE}gcc -Wall -O2 platform/rg35xx/tools/vtreset.c -o cache/rg35xx/bin/vtreset
+    \${CROSS_COMPILE}gcc -Wall -O2 -static platform/rg35xx/tools/loopro.c -o cache/rg35xx/bin/loopro
     mkdir -p cache/rg35xx/apps/PlayActivity
     make -s -C src/playActivityUI clean > /dev/null
     make -s -C src/playActivityUI BUILD_DIR=/src/cache/rg35xx/apps/PlayActivity VERSION=$VERSION

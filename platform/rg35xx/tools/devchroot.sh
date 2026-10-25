@@ -10,8 +10,9 @@
 #   devchroot.sh run CMD...    run CMD detached from the adb pty (SDL needs the VT)
 #                              and print its output when it exits
 #   devchroot.sh shell CMD...  run CMD in the chroot attached to adb (no SDL)
-#   devchroot.sh reboot        sync, remount the card read-only and reboot
-#                              (adb reboot leaves the FAT partition dirty)
+#   devchroot.sh reboot        reboot through Onion's shutdown script, which
+#                              remounts the card read-only (adb reboot leaves
+#                              the FAT partition dirty)
 set -e
 
 ROOT=/onion
@@ -41,8 +42,9 @@ mount)
     adb shell "
         for p in \$($B ps w | $B grep -E 'CFW/start|\./main' | $B grep -v grep | $B awk '{print \$1}'); do kill \$p; done
         mkdir -p $ROOT
-        $B losetup $LOOP $IMAGE
-        mount -t ext4 $LOOP $ROOT
+        /mnt/mmc/.tmp_update/bin/loopro $LOOP $IMAGE
+        mount -r -t ext4 $LOOP $ROOT
+        for f in tmp run appconfigs; do mount -t tmpfs tmpfs $ROOT/\$f; done
         for f in dev dev/pts proc sys misc; do mount -o bind /\$f $ROOT/\$f; done
         mount -o bind /mnt/mmc $ROOT/mnt/SDCARD
         $CHROOT /bin/sh -c 'nohup /mnt/SDCARD/.tmp_update/bin/padmapd >/dev/null 2>&1 </dev/null &'
@@ -54,7 +56,7 @@ umount)
         for p in \$($B ps w | $B grep -E '/mnt/SDCARD/' | $B grep -v grep | $B awk '{print \$1}'); do kill \$p; done
         sleep 1
         rm -f /dev/input/onion-kbd
-        for m in mnt/SDCARD misc sys proc dev/pts dev; do umount $ROOT/\$m; done
+        for m in mnt/SDCARD misc sys proc dev/pts dev appconfigs run tmp; do umount $ROOT/\$m; done
         umount $ROOT && $B losetup -d $LOOP
         $B grep ' $ROOT' /proc/mounts || echo unmounted"
     ;;
@@ -63,7 +65,8 @@ run)
     adb shell "$B setsid $CHROOT nohup /bin/sh -c '$*' > /mnt/mmc/.tmp_update/devchroot.log 2>&1 < /dev/null & wait \$!; echo exit=\$?; cat /mnt/mmc/.tmp_update/devchroot.log"
     ;;
 reboot)
-    adb shell "sync; mount -o remount,ro /mnt/mmc && $B reboot -f"
+    # A background job dies with the adb session; the reboot ends the wait
+    adb shell "$B setsid $CHROOT /mnt/SDCARD/.tmp_update/bin/shutdown -r > /dev/null 2>&1 < /dev/null & wait \$!"
     ;;
 shell)
     shift

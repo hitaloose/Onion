@@ -45,18 +45,22 @@ if [ -f /misc/enableADB ]; then
     /usbdbg.sh device
 fi
 
-# Mount the Onion rootfs
+# Mount the Onion rootfs read-only: a loop file open for writing keeps the
+# card from being remounted read-only at shutdown (and corrupts it). The stock
+# busybox only makes read-write loops, hence loopro. What needs writing lives
+# in tmpfs; the mount points are created in the image by Buildroot.
 ROOTFS=/onion
 LOOPDEVICE=/dev/block/loop7
 mkdir -p $ROOTFS
-$BUSYBOX losetup $LOOPDEVICE $SYSDIR/rootfs.img
-mount -r -w -o loop -t ext4 $LOOPDEVICE $ROOTFS
+$SYSDIR/bin/loopro $LOOPDEVICE $SYSDIR/rootfs.img
+mount -r -t ext4 $LOOPDEVICE $ROOTFS
 
+for f in tmp run appconfigs; do
+    mount -t tmpfs tmpfs $ROOTFS/$f
+done
 for f in dev dev/pts proc sys misc; do
-    mkdir -p $ROOTFS/$f
     mount -o bind /$f $ROOTFS/$f
 done
-mkdir -p $ROOTFS/mnt/SDCARD $ROOTFS/mnt/SDCARD2
 mount -o bind $SDCARD $ROOTFS/mnt/SDCARD
 mount -o bind /mnt/SDCARD2 $ROOTFS/mnt/SDCARD2
 

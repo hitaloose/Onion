@@ -491,18 +491,10 @@ network_cmd_enable = "true"
 EOM
 
     if is_rg35xx; then
-        # Plain SDL 1.2/ALSA build instead of the Miyoo drivers; the buttons
-        # come from the SDL joystick (autoconfig "RG35XX Gamepad"). Software
-        # bilinear scaling to 640x480 costs a third of the frame time
-        cat >> /tmp/onion_ra_patch.cfg <<- EOM
-video_driver = "sdl"
-audio_driver = "alsa"
-input_driver = "sdl"
-input_joypad_driver = "sdl"
-video_fullscreen_x = "640"
-video_fullscreen_y = "480"
-video_smooth = "false"
-EOM
+        # Plain SDL 1.2/ALSA build instead of the Miyoo drivers (software
+        # bilinear scaling to 640x480 costs a third of the frame time), and
+        # the Miyoo joypad binds translated to the RG35XX Gamepad numbering
+        cat $sysdir/res/rg35xx_retroarch.cfg >> /tmp/onion_ra_patch.cfg
     fi
 
     $sysdir/script/patch_ra_cfg.sh /tmp/onion_ra_patch.cfg
