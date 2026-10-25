@@ -1,0 +1,15 @@
+--- a/file_path_special.c	2026-10-25 22:01:20.890128838 +0000
++++ b/file_path_special.c	2026-10-25 22:01:20.898691004 +0000
+@@ -154,6 +154,12 @@
+ #elif defined(DINGUX)
+    dingux_get_base_path(s, len);
+    return true;
++#elif defined(RG35XX)
++   /* Onion keeps its RetroArch config in $HOME/.retroarch, as on the Miyoo */
++   if (!getenv("HOME"))
++      return false;
++   fill_pathname_join(s, getenv("HOME"), ".retroarch", len);
++   return true;
+ #elif !defined(RARCH_CONSOLE)
+    const char *xdg     = getenv("XDG_CONFIG_HOME");
+    const char *appdata = getenv("HOME");

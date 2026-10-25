@@ -19,8 +19,25 @@ VERSION="$(make -s -C "$ROOT_DIR" version)-rg35xx"
 PROGRAMS="bootScreen chargingState gameSwitcher keymon playActivity themeSwitcher
     tweaks packageManager sendkeys setState renameRom infoPanel prompt batmon
     easter detectKey pressMenu2Kill gameNameList sendUDP tree pippi
-    randomGamePicker padmapd"
+    randomGamePicker padmapd mainUI"
 APPS="Tweaks ThemeSwitcher"
+# Emulator packages whose cores platform/rg35xx/retroarch/cores.sh builds
+EMU_PACKAGES="
+Nintendo - Game Boy (Gambatte)
+Nintendo - Game Boy Color (Gambatte)
+Nintendo - GBA (gpSP)
+Nintendo - NES (FCEUmm)
+Nintendo - Famicom Disk Syst. (FCEUmm)
+Nintendo - SNES (Beetle Supafaust)
+Sega - Genesis (PicoDrive)
+Sega - Master System (PicoDrive)
+Sega - Game Gear (PicoDrive)
+Sega - CD (PicoDrive)
+Sega - 32X (PicoDrive)
+Sony - PlayStation (PCSX ReARMed)
+NEC - TurboGrafx-16 (Beetle PCE FAST)
+NEC - TurboGrafx CD (Beetle PCE FAST)
+"
 
 # Build
 rm -rf "$BIN_DIR"
@@ -47,6 +64,12 @@ for app in $APPS; do
     rsync -a "$ROOT_DIR/static/packages/App/$app/" "$OUT/"
 done
 rsync -a "$ROOT_DIR/static/packages/App/Activity Tracker/" "$OUT/"
+echo "$EMU_PACKAGES" | while read -r package; do
+    if [ -n "$package" ]; then
+        rsync -a "$ROOT_DIR/static/packages/Emu/$package/" "$OUT/"
+    fi
+done
+"$ROOT_DIR/static/packages/common/apply.sh" "$OUT/Emu" > /dev/null
 
 # Drop the Miyoo binaries and the Miyoo libraries (SDL, audio, MainUI hooks)
 find "$OUT" -type f -exec sh -c 'head -c 4 "$1" | grep -q "^.ELF" && rm -f "$1"' _ {} \;
@@ -68,8 +91,14 @@ cp "$CACHE_DIR/apps/PlayActivity/playActivityUI" "$OUT/App/PlayActivity/"
 cp "$CACHE_DIR/rootfs.img" "$SYSDIR/rootfs.img"
 printf "v%s" "$VERSION" > "$SYSDIR/onionVersion/version.txt"
 
-# Temporary launcher until src/mainUI exists
-cp "$PLATFORM_DIR/tools/mainui-stub.sh" "$OUT/miyoo/app/MainUI"
-chmod +x "$OUT/miyoo/app/MainUI"
+# RetroArch built by platform/rg35xx/retroarch/build.sh and cores.sh
+RA_DIR="$OUT/RetroArch/.retroarch"
+mkdir -p "$RA_DIR/cores" "$RA_DIR/autoconfig"
+cp "$CACHE_DIR/retroarch/retroarch" "$OUT/RetroArch/retroarch"
+cp "$CACHE_DIR"/cores/*_libretro.so "$RA_DIR/cores/"
+cp -R "$PLATFORM_DIR/retroarch/autoconfig/." "$RA_DIR/autoconfig/"
+
+# Onion's own MainUI replaces the Miyoo one
+mv "$SYSDIR/bin/MainUI" "$OUT/miyoo/app/MainUI"
 
 du -sh "$OUT"

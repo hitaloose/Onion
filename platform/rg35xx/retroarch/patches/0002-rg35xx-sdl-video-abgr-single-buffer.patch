@@ -1,0 +1,29 @@
+--- a/gfx/drivers/sdl_gfx.c	2026-10-25 21:58:34.988113011 +0000
++++ b/gfx/drivers/sdl_gfx.c	2026-10-25 21:58:34.998207470 +0000
+@@ -278,8 +278,15 @@
+    if (!video->fullscreen)
+       RARCH_LOG("[SDL] Creating window @ %ux%u.\n", video->width, video->height);
+ 
++#ifdef RG35XX
++   /* Panning between the two owlfb buffers shows every other frame a line
++    * off; draw straight into the visible framebuffer instead */
++   vid->screen = SDL_SetVideoMode(video->width, video->height, 32,
++         SDL_SWSURFACE | (video->fullscreen ? SDL_FULLSCREEN : 0));
++#else
+    vid->screen = SDL_SetVideoMode(video->width, video->height, 32,
+          SDL_HWSURFACE | SDL_HWACCEL | SDL_DOUBLEBUF | (video->fullscreen ? SDL_FULLSCREEN : 0));
++#endif
+ 
+    /* We assume that SDL chooses ARGB8888.
+     * Assuming this simplifies the driver *a ton*.
+@@ -322,7 +329,9 @@
+ 
+    vid->scaler.scaler_type      = video->smooth ? SCALER_TYPE_BILINEAR : SCALER_TYPE_POINT;
+    vid->scaler.in_fmt           = video->rgb32 ? SCALER_FMT_ARGB8888 : SCALER_FMT_RGB565;
+-   vid->scaler.out_fmt          = SCALER_FMT_ARGB8888;
++   /* Some framebuffers (e.g. owlfb) store red in the low byte */
++   vid->scaler.out_fmt          = vid->screen->format->Rshift == 0
++      ? SCALER_FMT_ABGR8888 : SCALER_FMT_ARGB8888;
+ 
+    vid->menu.scaler             = vid->scaler;
+    vid->menu.scaler.scaler_type = SCALER_TYPE_BILINEAR;

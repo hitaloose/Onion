@@ -490,6 +490,19 @@ force_retroarch_cfg() {
 network_cmd_enable = "true"
 EOM
 
+    if is_rg35xx; then
+        # Plain SDL 1.2/ALSA build instead of the Miyoo drivers; the buttons
+        # come from the SDL joystick (autoconfig "RG35XX Gamepad")
+        cat >> /tmp/onion_ra_patch.cfg <<- EOM
+video_driver = "sdl"
+audio_driver = "alsa"
+input_driver = "sdl"
+input_joypad_driver = "sdl"
+video_fullscreen_x = "640"
+video_fullscreen_y = "480"
+EOM
+    fi
+
     $sysdir/script/patch_ra_cfg.sh /tmp/onion_ra_patch.cfg
 
     rm /tmp/onion_ra_patch.cfg
