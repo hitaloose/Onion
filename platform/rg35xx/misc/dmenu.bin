@@ -76,7 +76,9 @@ export PATH=/usr/sbin:/usr/bin:/sbin:/bin
 export HOME=/mnt/SDCARD
 export SHELL=/bin/sh
 export SDL_NOMOUSE=1
-$BUSYBOX chroot $ROOTFS /bin/sh /mnt/SDCARD/.tmp_update/updater
+# Exec the updater itself, as the Miyoo firmware does: shutdown stops it by
+# name, and as "sh updater" it would survive and reboot the device
+$BUSYBOX chroot $ROOTFS /mnt/SDCARD/.tmp_update/updater
 
 # Keep the stock dmenu from respawning
 while true; do

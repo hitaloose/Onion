@@ -266,15 +266,24 @@ static uint32_t _bar_color = 0x00FFFFFF;
 static uint32_t *_bar_savebuf;
 #endif
 
+// Framebuffer column of the bar: the left edge of the screen, which on the
+// upside-down Miyoo panel is the right edge of the framebuffer
+static uint32_t _bar_x(void)
+{
+    return DISPLAY_ROTATED_180 ? g_display.width - meterWidth : 0;
+}
+
 void _print_bar(void)
 {
 #ifdef PLATFORM_DEVICE
     uint32_t *ofs = g_display.fb_addr;
     uint32_t i, j, curr, percentage = _bar_max > 0 ? _bar_value * g_display.height / _bar_max : 0;
 
-    ofs += g_display.width - meterWidth;
+    // Filled bottom-up on screen
+    ofs += _bar_x();
     for (i = 0; i < g_display.height * 3; i++, ofs += g_display.width) {
-        curr = (i % g_display.height) < percentage ? display_fbColor(_bar_color) : 0;
+        uint32_t row = DISPLAY_ROTATED_180 ? i % g_display.height : g_display.height - 1 - i % g_display.height;
+        curr = row < percentage ? display_fbColor(_bar_color) : 0;
         for (j = 0; j < meterWidth; j++)
             ofs[j] = curr;
     }
@@ -290,8 +299,8 @@ void _bar_restoreBufferBehind(void)
     _print_bar();
     if (_bar_savebuf) {
         uint32_t i, j, *ofs = g_display.fb_addr, *ofss = _bar_savebuf;
-        ofs += g_display.width - meterWidth;
-        ofss += g_display.width - meterWidth;
+        ofs += _bar_x();
+        ofss += _bar_x();
         for (i = 0; i < g_display.height; i++, ofs += g_display.width, ofss += g_display.width) {
             for (j = 0; j < meterWidth; j++)
                 ofs[j] = ofss[j];
@@ -309,8 +318,8 @@ void _bar_saveBufferBehind(void)
     if ((_bar_savebuf = (uint32_t *)malloc(g_display.width * g_display.height *
                                            sizeof(uint32_t)))) {
         uint32_t i, j, *ofs = g_display.fb_addr, *ofss = _bar_savebuf;
-        ofs += g_display.width - meterWidth;
-        ofss += g_display.width - meterWidth;
+        ofs += _bar_x();
+        ofss += _bar_x();
         for (i = 0; i < g_display.height; i++, ofs += g_display.width, ofss += g_display.width) {
             for (j = 0; j < meterWidth; j++)
                 ofss[j] = ofs[j];
