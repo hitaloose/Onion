@@ -129,6 +129,10 @@ bool terminate_drastic(void)
 
 void quietMainUI(void)
 {
+#ifdef PLATFORM_RG35XX
+    // Onion's own MainUI needs no quieting, and L1 pages its lists
+    return;
+#endif
     if (system_state == MODE_MAIN_UI) {
         print_debug("Sending L1 to quiet MainUI");
         keyinput_send(HW_BTN_L1, PRESSED);
