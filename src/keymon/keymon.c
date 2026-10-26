@@ -947,11 +947,27 @@ int main(void)
         }
 
         // Quit RetroArch / auto-save when battery too low
-        if (settings.low_battery_autosave_at && battery_getPercentage() <= settings.low_battery_autosave_at && check_autosave()) {
-            temp_flag_set(".lowBat", true);
-            screenshot_system();
-            terminate_retroarch();
-            terminate_drastic();
+        if (settings.low_battery_autosave_at && check_autosave()) {
+            int percentage = battery_getPercentage();
+            // The gauge reports 0 until it has measured the battery after
+            // boot, and a 0 here armed the shutdown for the next game exit.
+            // Only a real, non-charging reading may request it (0 means the
+            // gauge has not measured yet, never an empty battery on a boot).
+            bool valid = percentage > 0 && battery_hasReading() && !battery_isCharging();
+
+            if (valid && percentage <= settings.low_battery_autosave_at) {
+                printf_debug("Battery low (%d%% <= %d%%): closing the game\n",
+                             percentage, settings.low_battery_autosave_at);
+                temp_flag_set(".lowBat", true);
+                screenshot_system();
+                terminate_retroarch();
+                terminate_drastic();
+            }
+            else if (!valid || percentage > settings.low_battery_autosave_at) {
+                // Battery recovered, is charging or has no reading yet: drop a
+                // stale request so it cannot shut the device down later
+                remove("/tmp/.lowBat");
+            }
         }
 
         elapsed_sec = 0;

@@ -108,6 +108,9 @@ main() {
 
     # Init
     rm /tmp/.offOrder 2> /dev/null
+    # keymon only recreates this from a real battery reading: one left here
+    # would shut the device down on the first game exit
+    rm -f /tmp/.lowBat 2> /dev/null
     HOME=/mnt/SDCARD/RetroArch/
 
     # Disable VNC server flag at boot
@@ -628,6 +631,7 @@ launch_game_postprocess() {
         cleanup_appendconfig "$launch_path"
 
         if [ -f /tmp/.lowBat ]; then
+            log "Low battery: shutting down after closing the game"
             bootScreen lowBat
             sleep 3
             touch /tmp/.offOrder
@@ -718,6 +722,9 @@ launch_switcher() {
 
 check_off_order() {
     if [ -f /tmp/.offOrder ]; then
+        # Leave a trace on the card: a "device turned itself off" report is
+        # then a shutdown request in runtime.log, not a mystery
+        log ":: Shutdown requested ($1)"
         touch /tmp/shutting_down
 
         #EmuDeck - CheckOff scripts

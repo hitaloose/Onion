@@ -11,6 +11,47 @@
 static time_t battery_last_modified = 0;
 static bool battery_is_charging = false;
 
+#ifdef PLATFORM_RG35XX
+#define BATTERY_CAPACITY_PATH "/sys/class/power_supply/battery/capacity"
+#endif
+
+/**
+ * @brief Battery percentage straight from the fuel gauge, -1 when unknown
+ *
+ * The RG35XX gauge reports 0 until it has measured the battery after boot, and
+ * that 0 is not an empty battery: the device just booted on it. Callers that
+ * act on a low battery must check battery_hasReading() first.
+ *
+ * @return int : Battery percentage (1-100) or -1 when there is no measurement
+ */
+int battery_getGaugePercentage(void)
+{
+#ifdef PLATFORM_RG35XX
+    FILE *fp;
+    int percentage = 0;
+
+    file_get(fp, BATTERY_CAPACITY_PATH, "%d", &percentage);
+
+    return percentage > 0 ? percentage : -1;
+#else
+    return -1;
+#endif
+}
+
+/**
+ * @brief True when battery_getPercentage() is a real reading
+ *
+ * batmon writes /tmp/percBat as soon as it has a value; before that only the
+ * fuel gauge can answer, and only once it has measured.
+ */
+bool battery_hasReading(void)
+{
+    if (exists("/tmp/percBat"))
+        return true;
+
+    return battery_getGaugePercentage() >= 0;
+}
+
 /**
  * @brief Retrieve the current battery percentage as reported by batmon
  *
@@ -49,8 +90,11 @@ int battery_getPercentage(void)
 #ifdef PLATFORM_RG35XX
     // Until batmon writes percBat, read the fuel gauge itself: a 0% here
     // makes keymon close the game for low battery and shut down
-    if (percentage == -1)
-        file_get(fp, "/sys/class/power_supply/battery/capacity", "%d", &percentage);
+    if (percentage == -1) {
+        int gauge_percentage = battery_getGaugePercentage();
+        if (gauge_percentage >= 0)
+            percentage = gauge_percentage;
+    }
 #endif
 
     if (percentage == -1)
@@ -122,7 +166,30 @@ bool battery_hasChanged(int ticks, int *out_percentage)
         battery_is_charging = false;
     }
 
-    if (file_isModified("/tmp/percBat", &battery_last_modified)) {
+    bool refresh = file_isModified("/tmp/percBat", &battery_last_modified);
+
+#ifdef PLATFORM_RG35XX
+    // batmon can take a while to write percBat after boot (sqlite start-up).
+    // Until it exists, follow the gauge once a second so the header does not
+    // stay at 0% while the battery is fine. battery_getPercentage() waits for
+    // batmon (up to 300 ms), so read the gauge directly while percBat is
+    // missing instead of stalling the UI.
+    if (!exists("/tmp/percBat")) {
+        static int last_gauge_check = 0;
+        if (ticks - last_gauge_check >= 1000) {
+            last_gauge_check = ticks;
+
+            int gauge_percentage = battery_getGaugePercentage();
+            if (gauge_percentage >= 0 && gauge_percentage != *out_percentage) {
+                *out_percentage = gauge_percentage;
+                changed = true;
+            }
+        }
+        return changed;
+    }
+#endif
+
+    if (refresh) {
         int current_percentage = battery_getPercentage();
 
         if (current_percentage != *out_percentage) {
