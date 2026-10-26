@@ -158,6 +158,19 @@ Fases:
 - **G4 — 3D:** `mupen64plus-next` (GLES2), `ppsspp`. Expectativa: N64 jogável em parte do catálogo,
   PSP só jogos leves.
 
+## 6b. Próximo passo (decidido em 2026-10-26)
+
+Pendências de sistema, antes da G4 (N64/PSP). Lista completa na seção "Open issues" de
+`docs/rg35xx-kernel.md`. As principais:
+- sair do GameSwitcher para a lista de jogos às vezes desliga o console (sem log; capturar
+  `/proc/kmsg` no cartão com `sync` a cada segundo);
+- reboot (`devchroot.sh reboot`) desliga o console; com USB conectado ele fica na tela de carga até
+  tirar o cabo;
+- ADB some depois do boot (voltar com `adb kill-server` ou replugando o cabo);
+- texto "android" na tela durante o boot;
+- fone de ouvido não testado; FAT com `errors=remount-ro`;
+- ramdisk, bootloaders e `uenv.txt` ainda são do Garlic (impede release público).
+
 ## 7. Aparelho de teste (estado no fim desta sessão)
 
 - Cartão com imagem do Garlic regravada (partição de ROMs só 3,2 GB), Onion instalado por cima,
