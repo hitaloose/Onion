@@ -1,0 +1,14 @@
+xhci-trace.c includes xhci-trace.h through define_trace.h, which needs the
+source directory in the include path (upstream fix from Linux 3.12).
+
+--- a/drivers/usb/host/Makefile
++++ b/drivers/usb/host/Makefile
+@@ -4,6 +4,8 @@
+ 
+ ccflags-$(CONFIG_USB_DEBUG) := -DDEBUG
+ 
++CFLAGS_xhci-trace.o := -I$(src)
++
+ isp1760-y := isp1760-hcd.o isp1760-if.o
+ 
+ fhci-y := fhci-hcd.o fhci-hub.o fhci-q.o

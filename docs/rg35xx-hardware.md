@@ -1,5 +1,8 @@
 # RG35XX (original): hardware notes for the Onion port
 
+Facts here were measured on the Garlic OS kernel; where the Onion kernel differs (volume, framebuffer
+layout, autoplug, gamepad driver) see `docs/rg35xx-kernel.md`.
+
 Facts marked **known** come from reading the Garlic OS install (`misc/dmenu.bin`, `CFW/start`,
 RetroArch config, `strings` on its binaries). Facts marked **TODO** must be filled in from
 `platform/rg35xx/tools/recon.sh` output on a real device.

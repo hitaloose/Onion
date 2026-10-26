@@ -3,6 +3,7 @@
 Documento para continuar o trabalho em outra sessão. Complementa:
 - `docs/rg35xx-hardware.md`: fatos de hardware medidos no aparelho
 - `docs/rg35xx-status.md`: pendências conhecidas
+- `docs/rg35xx-kernel.md`: kernel próprio (fase G1)
 
 Repositório: fork `git@hitaloose.github.com:hitaloose/Onion.git` (remote `origin`), branch
 `rg35xx-port`. `upstream` = OnionUI/Onion (só para puxar atualizações; nada é enviado para lá).
@@ -19,7 +20,7 @@ O dono do projeto pretende mantê-lo como port no próprio GitHub, sem mandar PR
 - Performance (benchmark sem limite de FPS, CPU limitada a 1,2 GHz, com USB): SNES 84, GB 218,
   GBA 126, NES 131, MD 167, PCE 146 FPS.
 
-**Ponto crítico:** o port roda hoje sobre o **kernel do Garlic** (o `misc` veio da imagem do
+**Ponto crítico (resolvido em parte pela G1):** o port rodava sobre o **kernel do Garlic** (o `misc` veio da imagem do
 Garlic gravada no cartão: `uImage`, `kernel.dtb`, módulos `gpio_keys_polled.ko` "RG35XX Gamepad"
 do Black-Seraph, etc.). Não podemos redistribuí-lo. Um release público exige kernel próprio ou
 compatibilidade com o kernel de fábrica da Anbernic. Ver o plano da GPU (seção 6), que resolve isso.
@@ -137,14 +138,14 @@ Peças verificadas (todas na org GitHub `rg35xx-cfw`):
   para colar o texto se precisar.
 
 Fases:
-- **G1 — kernel próprio (primeiro passo, só no Mac):** clonar `s500_kernel` (branch `rg35xx`),
-  achar o defconfig do RG35XX, conferir drivers de tela/LCD (owl DSS/`owlfb`, `dc_owl`), gamepad
-  (o do Garlic é `gpio_keys_polled` reescrito: "RG35XX Gamepad", `BTN_*`, hat, eixos 2/5; o stock
-  pode ser diferente → ajustar `padmapd`), bateria (`atc260x_cap_gauge`, DTBs por capacidade em
-  `misc/dtbs`), áudio (`atm7059_link`), backlight, `/sys/class/volume`. Compilar kernel + módulos
-  com `eurasia_km_linux` + display class, gerar `uImage`. Boot: guardar `uImage`/`kernel.dtb`/
-  `modules` do Garlic como reserva no `misc`; recuperação pelo leitor de cartão no Mac. Medir no
-  aparelho com `platform/rg35xx/tools/recon.sh` e comparar com `docs/rg35xx-hardware.md`.
+- **G1 — kernel próprio: feito e testado no aparelho (2026-10-26).** Detalhes, decisões e
+  pendências em `docs/rg35xx-kernel.md`. `platform/rg35xx/kernel/build.sh` (GCC 4.7.3 do
+  Ubuntu 14.04) gera `uImage`, `kernel.dtb`, `dtbs/` e `modules/` em `cache/rg35xx/kernel/`. DTS =
+  `kernel.dtb` do Garlic decompilado + gamepad + alto-falante ativo em nível alto. Driver próprio
+  `rg35xx-gamepad`. Tabela de CPU do Garlic (patch 0003). ADB exige `USB_G_ANDROID=y` e
+  `USB_PLATFORM_LINUX` desligado. Volume pelo ALSA `DAC PA Volume`; framebuffer ARGB (o
+  `display_fbColor()` lê o layout). Pendências: reboot às vezes desliga, ADB demora a aparecer,
+  texto "android" no boot, fone de ouvido não testado.
 - **G2 — GPU acordando:** pacote Buildroot com as bibliotecas `v2/` (+ `libdrm`), `pvrsrvctl
   --start`, `powervr.ini` com WSEGL LINUXFB, rodar `gltest2`/`sgx_blit_test` no fb0.
 - **G3 — RetroArch GLES2:** contexto EGL para PowerVR fbdev (adaptar `mali_fbdev`/`vivante_fbdev`

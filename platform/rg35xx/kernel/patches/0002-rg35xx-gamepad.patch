@@ -1,0 +1,29 @@
+Build drivers/input/joystick/rg35xx-gamepad.c (copied there by build.sh from
+platform/rg35xx/kernel/drivers/).
+
+--- a/drivers/input/joystick/Kconfig
++++ b/drivers/input/joystick/Kconfig
+@@ -205,6 +205,15 @@
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called zhenhua.
+ 
++config JOYSTICK_RG35XX
++	tristate "Anbernic RG35XX gamepad"
++	depends on GPIOLIB && OF
++	select INPUT_POLLDEV
++	help
++	  Say Y here for the buttons of the Anbernic RG35XX (original),
++	  which are wired to SoC GPIOs and polled. The device matches the
++	  "RG35XX Gamepad" of the Garlic OS kernel.
++
+ config JOYSTICK_DB9
+ 	tristate "Multisystem, Sega Genesis, Saturn joysticks and gamepads"
+ 	depends on PARPORT
+--- a/drivers/input/joystick/Makefile
++++ b/drivers/input/joystick/Makefile
+@@ -31,4 +31,5 @@
+ obj-$(CONFIG_JOYSTICK_WARRIOR)		+= warrior.o
+ obj-$(CONFIG_JOYSTICK_XPAD)		+= xpad.o
+ obj-$(CONFIG_JOYSTICK_ZHENHUA)		+= zhenhua.o
++obj-$(CONFIG_JOYSTICK_RG35XX)		+= rg35xx-gamepad.o
+ obj-$(CONFIG_JOYSTICK_WALKERA0701)	+= walkera0701.o
