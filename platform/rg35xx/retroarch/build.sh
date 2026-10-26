@@ -1,8 +1,9 @@
 #!/bin/sh
 # Builds RetroArch for the RG35XX with Onion's patches (network commands used
 # by GameSwitcher and keymon). The Miyoo drivers from RetroArch-patch are not
-# used: video is the SDL 1.2 "sdl" driver on fbcon, audio is ALSA, input is
-# the SDL keyboard fed by padmapd.
+# used: video is the SDL 1.2 "sdl" driver on fbcon, or "gl" (OpenGL ES 2 on
+# the PowerVR GPU, mali_fbdev context patched for its FLIP window system);
+# audio is ALSA; input is the SDL joystick.
 # Patches in platform/rg35xx/retroarch/patches apply on top of Onion's.
 # Usage (from the repo root): platform/rg35xx/retroarch/build.sh [clean]
 # Output: cache/rg35xx/retroarch/retroarch
@@ -42,13 +43,13 @@ mkdir -p "$ROOT_DIR/cache/rg35xx/retroarch"
         ./configure --host=arm-buildroot-linux-gnueabihf --prefix=/usr \
             --enable-sdl --disable-sdl2 --enable-alsa --disable-oss \
             --disable-pulse --disable-jack --disable-x11 --disable-wayland \
-            --disable-kms --disable-egl --disable-opengl --disable-opengl1 \
-            --disable-opengles --disable-vulkan --disable-qt --disable-ffmpeg \
+            --disable-kms --enable-egl --disable-opengl --disable-opengl1 \
+            --enable-opengles --disable-vulkan --disable-qt --disable-ffmpeg \
             --disable-materialui --disable-xmb --disable-ozone --enable-rgui \
             --enable-neon --enable-floathard --disable-udev --disable-dbus \
             --disable-discord --disable-ssl --disable-cheevos \
             --enable-networking --enable-command --enable-7zip --enable-zlib \
-            --enable-threads --disable-videocore --disable-mali_fbdev
+            --enable-threads --disable-videocore --enable-mali_fbdev
     fi
     make -j$(nproc) > /work/retroarch-build.log 2>&1 || { tail -40 /work/retroarch-build.log; exit 1; }
     ${CROSS_COMPILE}strip -o /src/cache/rg35xx/retroarch/retroarch retroarch

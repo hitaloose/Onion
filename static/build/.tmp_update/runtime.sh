@@ -505,6 +505,11 @@ EOM
         # overlay 2x to the 640x480 panel: software scaling to 640x480 took
         # most of the frame time
         cat $sysdir/res/rg35xx_retroarch.cfg >> /tmp/onion_ra_patch.cfg
+        # With the PowerVR GPU up (Onion kernel), draw with OpenGL ES 2: it
+        # scales to the 640x480 framebuffer and runs shaders
+        if [ -e /dev/dri/card0 ]; then
+            cat $sysdir/res/rg35xx_retroarch_gpu.cfg >> /tmp/onion_ra_patch.cfg
+        fi
         echo 640,480 > /sys/devices/platform/owldss/overlay0/output_size
         echo 0,0 > /sys/devices/platform/owldss/overlay0/position
     fi

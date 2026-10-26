@@ -1,0 +1,24 @@
+#ifdef HAVE_EGL
+   frontend_driver_install_signal_handler();
+   mali->egl.use_hw_ctx = true;
+   if (!egl_init_context(&mali->egl, EGL_NONE, EGL_DEFAULT_DISPLAY,
+            &major, &minor, &n, attribs_init, NULL) ||
+   !egl_create_context(&mali->egl, attribs_create) ||
+   !egl_create_surface(&mali->egl, &mali->native_window))
+      goto error;
+#endif
+--- a/gfx/drivers_context/mali_fbdev_ctx.c	2026-10-26 10:48:19.969313345 +0000
++++ b/gfx/drivers_context/mali_fbdev_ctx.c	2026-10-26 10:48:19.970003345 +0000
+@@ -263,7 +263,12 @@
+    if (!egl_init_context(&mali->egl, EGL_NONE, EGL_DEFAULT_DISPLAY,
+             &major, &minor, &n, attribs_init, NULL) ||
+    !egl_create_context(&mali->egl, attribs_create) ||
++#ifdef RG35XX
++   /* The PowerVR FLIP window system draws to fb0 and takes no window */
++   !egl_create_surface(&mali->egl, NULL))
++#else
+    !egl_create_surface(&mali->egl, &mali->native_window))
++#endif
+       goto error;
+ #endif
+ 

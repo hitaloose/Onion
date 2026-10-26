@@ -138,8 +138,20 @@ triangle) runs smoothly, at about 789 fps (no vsync wait), `GL renderer: PowerVR
   `pvrsrvctl --start --no-module` in the chroot, only when `drm.ko` is there (Garlic's misc has an
   Android `pvrsrvkm.ko` that does not match these libraries). Modules are stripped of debug symbols
   by `build.sh` (misc has about 3 MB free).
-- Next (G3): RetroArch with an EGL context for this fbdev setup and the `gl` video driver; vsync
-  (`eglSwapInterval`) still to check.
+- RetroArch (G3, working): built with `--enable-egl --enable-opengles --enable-mali_fbdev`; patch
+  `platform/rg35xx/retroarch/patches/0004` makes the `mali_fbdev` context pass a NULL native window.
+  `runtime.sh` adds `res/rg35xx_retroarch_gpu.cfg` (`video_driver = "gl"`, `video_context_driver =
+  "mali_fbdev"`) when `/dev/dri/card0` exists, otherwise RetroArch keeps the `sdl` driver (Garlic
+  kernel). Input stays the SDL joystick, which works without SDL video. GL renders at the
+  framebuffer size (640x480), so the owldss 2x scaling is not used.
+- Benchmark, Yoshi's Island (Beetle Supafaust), CPU 1.2 GHz, unthrottled, audio off: `sdl` 112 fps,
+  `gl` 111-119 fps; with shaders `sharp-bilinear-simple` 109, `crt-pi` 81, `lcd3x` 74 (libretro
+  glsl-shaders; none are installed on the card by `dist.sh` yet).
+- **Vsync does nothing**: `video_vsync` on or off gives the same unthrottled speed (FLIP ignores
+  `eglSwapInterval`). Games are paced by audio sync, as with the `sdl` driver.
+- Testing pitfalls: RetroArch keeps the **first** occurrence of a repeated key in a config file
+  (an appended line does not override an earlier one in the same file), and Onion's keymon
+  SIGSTOPs RetroArch when the screen times out (stop keymon during long adb benchmarks).
 
 ## Still from Garlic
 
@@ -173,4 +185,7 @@ and compare `md5sum`. Rollback: card in the Mac, copy `garlic-misc/*` back over 
   `earphone_detect2_gpios`, which this codec driver does not know (it uses GPIO 28).
 - **FAT mounts use `errors=remount-ro`** (Garlic: `errors=continue`): a real FAT error makes the card
   read-only until reboot.
+- **Leaving GameSwitcher for the game list powered the device off** a few times (with the `sdl`
+  RetroArch driver, GPU modules loaded); not reproduced after RetroArch moved to `gl`.
+- **Unplugging USB once rebooted the device.**
 - `misc/ramdisk.img`, the bootloaders and `uenv.txt` are still Garlic's (see above).
