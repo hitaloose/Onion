@@ -198,8 +198,10 @@ and compare `md5sum`. Rollback: card in the Mac, copy `garlic-misc/*` back over 
 - **FAT mounts use `errors=remount-ro`** (Garlic: `errors=continue`): a real FAT error makes the card
   read-only until reboot.
 - **Leaving GameSwitcher for the game list powers the device off** now and then: seen with the
-  `sdl` RetroArch driver and again with `gl` and the GPU at 400 MHz. Not investigated yet. No log
-  survives it (`runtime.log` and `dmesg` start over at boot); capturing `/proc/kmsg` to the card
-  with a `sync` every second (as tried once) is the way to catch it.
+  `sdl` RetroArch driver and again with `gl` and the GPU at 400 MHz. Now explained by the battery
+  flag: a 0% gauge reading at boot armed `/tmp/.lowBat` and the first game exit ran `bootScreen
+  lowBat` + `shutdown`, which is why no log survived. keymon only arms it from a real reading now,
+  `runtime.sh` clears it at boot and logs a shutdown (`:: Shutdown requested`), so a recurrence
+  leaves a trace. To be confirmed on battery power after the next reboot.
 - **Unplugging USB once rebooted the device.**
 - `misc/ramdisk.img`, the bootloaders and `uenv.txt` are still Garlic's (see above).

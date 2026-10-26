@@ -162,8 +162,8 @@ Fases:
 
 Pendências de sistema, antes da G4 (N64/PSP). Lista completa na seção "Open issues" de
 `docs/rg35xx-kernel.md`. As principais:
-- sair do GameSwitcher para a lista de jogos às vezes desliga o console (sem log; capturar
-  `/proc/kmsg` no cartão com `sync` a cada segundo);
+- ~~sair do GameSwitcher para a lista de jogos às vezes desliga o console~~: era o 0% da gauge no
+  boot virando `/tmp/.lowBat` (commit 9b7f42d5). Falta confirmar em bateria depois de um reboot;
 - reboot (`devchroot.sh reboot`) desliga o console; com USB conectado ele fica na tela de carga até
   tirar o cabo;
 - ADB some depois do boot (voltar com `adb kill-server` ou replugando o cabo);

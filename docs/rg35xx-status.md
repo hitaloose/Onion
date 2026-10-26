@@ -2,12 +2,9 @@
 
 ## Open issues
 
-- **Battery shows 0% for ~10 s after boot.** `battery_getPercentage()` now falls back to
-  `/sys/class/power_supply/battery/capacity` while `/tmp/percBat` is missing (commit b27531f4), which
-  stopped keymon from closing games for "low battery" right after boot, but the MainUI header still
-  starts at 0%. Likely cause: `battery_hasChanged()` only refreshes when `/tmp/percBat` changes, and
-  the first value MainUI reads may come before batmon writes it. To check: batmon start-up time
-  (sqlite on the card), and whether MainUI should read the gauge on its first frame.
+- **Battery header on battery power is still unconfirmed.** The gauge reports 0% until it measures,
+  and while charging the header shows the charging icon, so the header at boot has only been checked
+  on USB. Test after the next reboot without the cable.
 - **Hi-res frames are downscaled**: RetroArch draws 320x240 for the hardware 2x scaling, so SNES
   hi-res (512 wide) and PS1 640x480 modes lose detail. Could switch to a 640x480 mode for those.
 - **CPU clock**: capped at 1200 MHz because 1488 MHz hung the device under load while charging.
@@ -21,6 +18,14 @@
   dirty flag on remount read-only. Real corruption shows as "invalid cluster chain" errors.
 
 ## Fixed, for the record
+
+- Battery 0% at boot turned into a shutdown on the next game exit: the gauge reports 0% until it
+  measures, keymon armed `/tmp/.lowBat` from that 0, and `runtime.sh` only acts on the flag when a
+  game ends (`bootScreen lowBat`, `.offOrder`, `shutdown`). That is the "device turns itself off
+  when leaving a game or GameSwitcher" report, with no log because it is a clean shutdown. Now only
+  a real, non-charging reading above 0% arms the flag, it is dropped when the battery recovers, and
+  `runtime.sh` logs both the low-battery and the `.offOrder` shutdown to `runtime.log`. While batmon
+  has not written `/tmp/percBat`, the headers follow the gauge once a second.
 
 - Card corruption: rootfs.img was loop-mounted read-write from the card, so the card could never
   be remounted read-only at shutdown. Now read-only through `loopro`, with tmpfs on /tmp, /run and
