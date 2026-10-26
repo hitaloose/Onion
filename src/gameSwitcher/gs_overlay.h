@@ -21,6 +21,21 @@
 static pthread_t autosave_thread_pt;
 static bool autosave_thread_running = false;
 
+#ifdef PLATFORM_RG35XX
+static SDL_Surface *_fb_capture = NULL;
+
+// The SDL video path clears the framebuffer when it opens, so the game frame
+// is captured before SDL starts, at whatever mode RetroArch left
+void overlay_captureFramebuffer(void)
+{
+    display_init(true);
+    rect_t rect = {0, 0, g_display.vinfo.xres, g_display.vinfo.yres};
+    _fb_capture = SDL_CreateRGBSurface(SDL_SWSURFACE, rect.w, rect.h, 32, 0, 0, 0, 0);
+    if (_fb_capture != NULL)
+        display_readCurrentBuffer(&g_display, (uint32_t *)_fb_capture->pixels, rect, DISPLAY_ROTATED_180, false);
+}
+#endif
+
 void setFbAsFirstRomScreen(void)
 {
     if (game_list_len == 0)
@@ -32,6 +47,23 @@ void setFbAsFirstRomScreen(void)
         SDL_FreeSurface(game->romScreen);
         game->romScreen = NULL;
     }
+
+#ifdef PLATFORM_RG35XX
+    if (_fb_capture != NULL) {
+        // Captured at the RetroArch mode (320x240), shown at the screen size
+        double scale_x = (double)g_display.width / _fb_capture->w;
+        double scale_y = (double)g_display.height / _fb_capture->h;
+        if (scale_x == 1.0 && scale_y == 1.0) {
+            game->romScreen = _fb_capture;
+        }
+        else {
+            game->romScreen = zoomSurface(_fb_capture, scale_x, scale_y, SMOOTHING_OFF);
+            SDL_FreeSurface(_fb_capture);
+        }
+        _fb_capture = NULL;
+        return;
+    }
+#endif
 
     game->romScreen = SDL_CreateRGBSurface(SDL_SWSURFACE, g_display.width, g_display.height, 32, 0, 0, 0, 0);
     display_readCurrentBuffer(&g_display, (uint32_t *)game->romScreen->pixels, (rect_t){0, 0, g_display.width, g_display.height}, DISPLAY_ROTATED_180, false);

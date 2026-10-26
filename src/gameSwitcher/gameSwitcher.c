@@ -43,6 +43,11 @@ int main(int argc, char *argv[])
     signal(SIGINT, sigHandler);
     signal(SIGTERM, sigHandler);
 
+#ifdef PLATFORM_RG35XX
+    if (appState.is_overlay)
+        overlay_captureFramebuffer();
+#endif
+
     init(INIT_ALL);
 
     readFirstEntry();

@@ -18,6 +18,14 @@ bool SDL_InitDefault(void)
 {
     display_getRenderResolution();
 
+#ifdef PLATFORM_RG35XX
+    // RetroArch leaves the framebuffer at 320x240 (scaled 2x by the display
+    // controller): open at the panel resolution, not the current mode
+    display_getResolution();
+    g_display.width = DISPLAY_WIDTH;
+    g_display.height = DISPLAY_HEIGHT;
+#endif
+
 #ifdef HAS_AUDIO
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
 #else

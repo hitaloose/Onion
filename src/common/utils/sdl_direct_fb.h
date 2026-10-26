@@ -32,7 +32,12 @@ static bool keyinput_disabled = false;
 
 void init(int flags)
 {
+#ifdef PLATFORM_DEVICE
+    // Also needed when rendering through SDL: GameSwitcher and screenshots read it
+    display_init(true);
+#else
     display_init(_render_direct_to_fb);
+#endif
 
     if (g_display.width != 640 || g_display.height != 480) {
         theme_initScaling((double)g_display.width / 640.0, zoomSurface);
