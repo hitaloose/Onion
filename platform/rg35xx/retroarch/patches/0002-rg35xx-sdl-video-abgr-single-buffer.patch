@@ -1,6 +1,19 @@
---- a/gfx/drivers/sdl_gfx.c	2026-10-25 22:41:50.536526087 +0000
-+++ b/gfx/drivers/sdl_gfx.c	2026-10-25 22:41:50.552021337 +0000
-@@ -278,8 +278,15 @@
+--- a/gfx/drivers/sdl_gfx.c	2026-10-26 01:37:42.829515930 +0000
++++ b/gfx/drivers/sdl_gfx.c	2026-10-26 01:37:42.838647471 +0000
+@@ -37,6 +37,12 @@
+ #include "SDL.h"
+ #include "SDL_syswm.h"
+ 
++#ifdef RG35XX
++#include <fcntl.h>
++#include <linux/fb.h>
++#include <sys/ioctl.h>
++#endif
++
+ #include "../font_driver.h"
+ 
+ #include "../../configuration.h"
+@@ -278,8 +284,15 @@
     if (!video->fullscreen)
        RARCH_LOG("[SDL] Creating window @ %ux%u.\n", video->width, video->height);
  
@@ -16,7 +29,7 @@
  
     /* We assume that SDL chooses ARGB8888.
      * Assuming this simplifies the driver *a ton*.
-@@ -320,9 +327,13 @@
+@@ -320,9 +333,13 @@
           msg_color_g,
           msg_color_b);
  
@@ -32,7 +45,7 @@
  
     vid->menu.scaler             = vid->scaler;
     vid->menu.scaler.scaler_type = SCALER_TYPE_BILINEAR;
-@@ -368,7 +379,8 @@
+@@ -368,9 +385,26 @@
     bool menu_is_alive = (video_info->menu_st_flags & MENU_ST_FLAG_ALIVE) ? true : false;
  #endif
  
@@ -41,4 +54,22 @@
 +   if (!vid || (!frame && !vid->menu.active))
        return true;
  
++#ifdef RG35XX
++   {
++      /* An overlay opened over the paused game (GameSwitcher, the saving
++       * message) may have changed the framebuffer mode: set ours again */
++      static int fb_fd = -1;
++      struct fb_var_screeninfo vinfo;
++
++      if (fb_fd < 0)
++         fb_fd = open("/dev/fb0", O_RDONLY);
++      if (fb_fd >= 0 && ioctl(fb_fd, FBIOGET_VSCREENINFO, &vinfo) == 0 &&
++            (vinfo.xres != (unsigned)vid->screen->w || vinfo.yres != (unsigned)vid->screen->h))
++         vid->screen = SDL_SetVideoMode(vid->screen->w, vid->screen->h, 32,
++               SDL_SWSURFACE | (vid->screen->flags & SDL_FULLSCREEN));
++   }
++#endif
++
     title[0] = '\0';
+ 
+    video_driver_get_window_title(title, sizeof(title));

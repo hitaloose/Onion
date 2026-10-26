@@ -1,0 +1,18 @@
+diff -ur a/src/video/fbcon/SDL_fbvideo.c b/src/video/fbcon/SDL_fbvideo.c
+--- a/src/video/fbcon/SDL_fbvideo.c	2026-10-26 01:37:14.884654416 +0000
++++ b/src/video/fbcon/SDL_fbvideo.c	2026-10-26 01:37:14.891632208 +0000
+@@ -1969,10 +1969,12 @@
+ 			mapped_io = NULL;
+ 		}
+ 
+-		/* Restore the original video mode and palette */
++		/* Restore the original palette. The video mode is left as it is:
++		 * programs opened on top of each other (a game, an overlay, the
++		 * menu) exit in any order, and restoring the mode found at start
++		 * would undo the mode of a program that started after us */
+ 		if ( FB_InGraphicsMode(this) ) {
+ 			FB_RestorePalette(this);
+-			ioctl(console_fd, FBIOPUT_VSCREENINFO, &saved_vinfo);
+ 		}
+ 
+ 		/* We're all done with the framebuffer */

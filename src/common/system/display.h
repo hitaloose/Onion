@@ -124,29 +124,6 @@ void display_getResolution(void)
     fclose(file);
 }
 
-#ifdef PLATFORM_RG35XX
-// Puts fb0 back in the panel mode. SDL programs restore the mode they found
-// when they exit, and with RetroArch (320x240), GameSwitcher and MainUI
-// opening on top of each other the last one out may leave the wrong mode,
-// which the display controller then shows scaled.
-void display_setPanelMode(void)
-{
-    struct fb_var_screeninfo vinfo;
-    int fd = open("/dev/fb0", O_RDWR);
-
-    if (fd < 0)
-        return;
-    if (ioctl(fd, FBIOGET_VSCREENINFO, &vinfo) == 0) {
-        vinfo.xres = vinfo.xres_virtual = DISPLAY_WIDTH;
-        vinfo.yres = DISPLAY_HEIGHT;
-        vinfo.yres_virtual = DISPLAY_HEIGHT * 2;
-        vinfo.xoffset = vinfo.yoffset = 0;
-        ioctl(fd, FBIOPUT_VSCREENINFO, &vinfo);
-    }
-    close(fd);
-}
-#endif
-
 void display_init(bool map_fb)
 {
     if (g_display.init_done)

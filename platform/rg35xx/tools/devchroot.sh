@@ -10,9 +10,8 @@
 #   devchroot.sh run CMD...    run CMD detached from the adb pty (SDL needs the VT)
 #                              and print its output when it exits
 #   devchroot.sh shell CMD...  run CMD in the chroot attached to adb (no SDL)
-#   devchroot.sh reboot        reboot through Onion's shutdown script, which
-#                              remounts the card read-only (adb reboot leaves
-#                              the FAT partition dirty)
+#   devchroot.sh reboot        stop Onion, remount the card read-only and
+#                              reboot (adb reboot leaves the FAT partition dirty)
 set -e
 
 ROOT=/onion
@@ -65,8 +64,8 @@ run)
     adb shell "$B setsid $CHROOT nohup /bin/sh -c '$*' > /mnt/mmc/.tmp_update/devchroot.log 2>&1 < /dev/null & wait \$!; echo exit=\$?; cat /mnt/mmc/.tmp_update/devchroot.log"
     ;;
 reboot)
-    # A background job dies with the adb session; the reboot ends the wait
-    adb shell "$B setsid $CHROOT /mnt/SDCARD/.tmp_update/bin/shutdown -r > /dev/null 2>&1 < /dev/null & wait \$!"
+    adb push "$REPO/platform/rg35xx/tools/cleanreboot.sh" /tmp/cleanreboot.sh > /dev/null
+    adb shell "sh /tmp/cleanreboot.sh"
     ;;
 shell)
     shift
