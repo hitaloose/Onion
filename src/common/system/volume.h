@@ -10,8 +10,13 @@
 #define MAX_VOLUME 20
 
 #ifdef PLATFORM_RG35XX
-// The codec volume is a 0-40 kernel attribute (0 is silent)
+#include <sound/asound.h>
+#include <string.h>
+
+// The codec volume is 0-40 (0 is silent): a kernel attribute on the Garlic OS
+// kernel, the ALSA control VOLUME_CONTROL on the Onion kernel
 #define VOLUME_PATH "/sys/class/volume/value"
+#define VOLUME_CONTROL "DAC PA Volume"
 #define MIN_RAW_VALUE 0
 #define MAX_RAW_VALUE 40
 #else
@@ -24,13 +29,42 @@
 #define MI_AO_SETMUTE 0x4008690d
 
 #ifdef PLATFORM_RG35XX
+// Reads VOLUME_CONTROL, and writes it unless value is negative
+static int volume_control(int value)
+{
+    struct snd_ctl_elem_value elem;
+    int fd, prev_value = 0;
+
+    if ((fd = open("/dev/snd/controlC0", O_RDWR)) < 0)
+        return 0;
+
+    memset(&elem, 0, sizeof(elem));
+    elem.id.iface = SNDRV_CTL_ELEM_IFACE_MIXER;
+    strncpy((char *)elem.id.name, VOLUME_CONTROL, sizeof(elem.id.name) - 1);
+    if (ioctl(fd, SNDRV_CTL_IOCTL_ELEM_READ, &elem) == 0) {
+        prev_value = elem.value.integer.value[0];
+        if (value >= 0 && value != prev_value) {
+            elem.value.integer.value[0] = value;
+            ioctl(fd, SNDRV_CTL_IOCTL_ELEM_WRITE, &elem);
+        }
+    }
+
+    close(fd);
+    return prev_value;
+}
+
 // Set volume output between 0 and 40, use `add` for boosting
 int setVolumeRaw(int value, int add)
 {
     FILE *fp;
     int prev_value = 0;
+    bool has_attribute = exists(VOLUME_PATH);
 
-    file_get(fp, VOLUME_PATH, "%d", &prev_value);
+    if (has_attribute) {
+        file_get(fp, VOLUME_PATH, "%d", &prev_value);
+    }
+    else
+        prev_value = volume_control(-1);
 
     if (add)
         value = prev_value + add;
@@ -41,7 +75,11 @@ int setVolumeRaw(int value, int add)
         value = MIN_RAW_VALUE;
 
     if (value != prev_value) {
-        file_put(fp, VOLUME_PATH, "%d", value);
+        if (has_attribute) {
+            file_put(fp, VOLUME_PATH, "%d", value);
+        }
+        else
+            volume_control(value);
         printf_debug("raw volume: %d\n", value);
     }
 

@@ -68,15 +68,32 @@ typedef struct Rect {
     int h;
 } rect_t;
 
+#ifdef PLATFORM_RG35XX
+// owlfb on the Garlic OS kernel stores red in the low byte (0xAABBGGRR); the
+// Onion kernel uses 0xAARRGGBB. Read the layout the running kernel reports.
+static bool display_fbRedLow(void)
+{
+    static int red_low = -1;
+    if (red_low < 0) {
+        struct fb_var_screeninfo vinfo;
+        int fd = open("/dev/fb0", O_RDONLY);
+        red_low = fd >= 0 && ioctl(fd, FBIOGET_VSCREENINFO, &vinfo) == 0 &&
+                  vinfo.red.offset == 0;
+        if (fd >= 0)
+            close(fd);
+    }
+    return red_low;
+}
+#endif
+
 // Converts a 0xAARRGGBB color to the framebuffer pixel layout
 static inline uint32_t display_fbColor(uint32_t argb)
 {
 #ifdef PLATFORM_RG35XX
-    // owlfb stores red in the low byte (0xAABBGGRR)
-    return (argb & 0xFF00FF00) | ((argb >> 16) & 0xFF) | ((argb & 0xFF) << 16);
-#else
-    return argb;
+    if (display_fbRedLow())
+        return (argb & 0xFF00FF00) | ((argb >> 16) & 0xFF) | ((argb & 0xFF) << 16);
 #endif
+    return argb;
 }
 
 void display_clear(void)
