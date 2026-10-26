@@ -146,10 +146,12 @@ Fases:
   `USB_PLATFORM_LINUX` desligado. Volume pelo ALSA `DAC PA Volume`; framebuffer ARGB (o
   `display_fbColor()` lê o layout). Pendências: reboot às vezes desliga, ADB demora a aparecer,
   texto "android" no boot, fone de ouvido não testado.
-- **G2 — GPU acordando:** pacote Buildroot com as bibliotecas `v2/` (+ `libdrm`), `pvrsrvctl
-  --start`, `powervr.ini` com WSEGL LINUXFB, rodar `gltest2`/`sgx_blit_test` no fb0.
+- **G2 — GPU acordando: feito (2026-10-26).** OpenGL ES 2.0 desenha no painel (`egltest`, ~789 fps
+  sem vsync). Pacote Buildroot `powervr-sgx-um` + `libdrm`; WSEGL **FLIP** (a LINUXFB recusa o
+  display); `dmenu.bin` carrega `drm.ko`/`pvrsrvkm.ko` do `misc` e roda `pvrsrvctl`. GPU a 300 MHz por
+  enquanto. Detalhes em `docs/rg35xx-kernel.md`, seção GPU.
 - **G3 — RetroArch GLES2:** contexto EGL para PowerVR fbdev (adaptar `mali_fbdev`/`vivante_fbdev`
-  do RetroArch; com LINUXFBWSEGL a janela nativa pode ser NULL), driver de vídeo `gl`, shaders.
+  do RetroArch; com a FLIPWSEGL a janela nativa é NULL), driver de vídeo `gl`, shaders.
 - **G4 — 3D:** `mupen64plus-next` (GLES2), `ppsspp`. Expectativa: N64 jogável em parte do catálogo,
   PSP só jogos leves.
 

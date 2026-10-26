@@ -21,6 +21,15 @@
 		};
 	};
 
+	/* PowerVR SGX544 (pvrsrvkm.ko). There is no GPU regulator: the driver
+	 * falls back to dcdc1 (CPU) and only raises its minimum, at most to
+	 * 1.2 V. normal_value 2 (stock) runs at 400 MHz; any other value at
+	 * 300 MHz, used until the GPU is known to be stable */
+	gpu@b0300000 {
+		normal_value = <0x00>;
+		status = "okay";
+	};
+
 	/* Codes from linux/input.h; START, SELECT, MENU and the volume keys
 	 * have a second GPIO for another board revision */
 	gamepad {

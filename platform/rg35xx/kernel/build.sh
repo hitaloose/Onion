@@ -48,6 +48,9 @@ dtc rg35xx.dts /out/kernel.dtb
 cp /out/kernel.dtb /out/dtbs/2600mAh.dtb
 dtc rg35xx-2100mAh.dts /out/dtbs/2100mAh.dtb
 dtc rg35xx-2800mAh.dts /out/dtbs/2800mAh.dtb
-find . -name '*.ko' -not -path './android/*' -exec cp {} /out/modules/ \;
+# Without debug symbols: misc has about 3 MB free
+for m in \$(find . -name '*.ko' -not -path './android/*'); do
+    arm-linux-gnueabihf-strip --strip-debug -o /out/modules/\$(basename \$m) \$m
+done
 "
 ls -l "$OUT_DIR" "$OUT_DIR/dtbs"

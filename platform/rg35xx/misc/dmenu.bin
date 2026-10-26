@@ -70,6 +70,15 @@ done
 mount -o bind $SDCARD $ROOTFS/mnt/SDCARD
 mount -o bind /mnt/SDCARD2 $ROOTFS/mnt/SDCARD2
 
+# PowerVR SGX GPU: kernel modules of the Onion kernel, then the user-space
+# services from the rootfs. Garlic's misc has an Android pvrsrvkm.ko that
+# does not match our libraries and no drm.ko, so it is left alone.
+if [ -f /misc/modules/drm.ko ] && [ -f /misc/modules/pvrsrvkm.ko ]; then
+    insmod /misc/modules/drm.ko
+    insmod /misc/modules/pvrsrvkm.ko &&
+        $BUSYBOX chroot $ROOTFS /usr/bin/pvrsrvctl --start --no-module
+fi
+
 # Mirror the screen to HDMI while it is plugged in
 (
     while true; do

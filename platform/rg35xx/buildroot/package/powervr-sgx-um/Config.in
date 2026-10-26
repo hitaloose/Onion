@@ -1,0 +1,23 @@
+config BR2_PACKAGE_POWERVR_SGX_UM
+	bool "powervr-sgx-um"
+	select BR2_PACKAGE_LIBDRM # libsrv_um
+	select BR2_PACKAGE_HAS_LIBEGL
+	select BR2_PACKAGE_HAS_LIBGLES
+	help
+	  User-space driver of the PowerVR SGX544 (EGL, OpenGL ES 1.1
+	  and 2.0) for the Actions S500/ATM7039, DDK 1.14@3625561, from
+	  the Cubieboard 6 Ubuntu packages. Matches pvrsrvkm.ko of the
+	  Onion kernel (platform/rg35xx/kernel). Only the parts that do
+	  not need X11: EGL on the framebuffer through the FLIP window
+	  system (/etc/powervr.ini; LINUXFB refuses the display, FRONT and
+	  BLIT are installed but untested).
+
+if BR2_PACKAGE_POWERVR_SGX_UM
+
+config BR2_PACKAGE_PROVIDES_LIBEGL
+	default "powervr-sgx-um"
+
+config BR2_PACKAGE_PROVIDES_LIBGLES
+	default "powervr-sgx-um"
+
+endif

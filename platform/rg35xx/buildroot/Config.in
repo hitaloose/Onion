@@ -1,1 +1,2 @@
 source "$BR2_EXTERNAL_ONION_RG35XX_PATH/package/onion-customer/Config.in"
+source "$BR2_EXTERNAL_ONION_RG35XX_PATH/package/powervr-sgx-um/Config.in"

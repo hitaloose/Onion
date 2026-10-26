@@ -111,15 +111,35 @@ owlfb reports `rgba 8/16,8/8,8/0` here (0xAARRGGBB, like the Miyoo); the Garlic 
 the low byte. SDL and RetroArch (patch 0002) follow the reported layout; `display_fbColor()` now reads
 it too (it swapped R and B unconditionally, which broke the GameSwitcher preview).
 
-## GPU kernel side (for G2)
+## GPU (G2, working)
 
-- `pvrsrvkm.ko` is `SGX_DDK_Linux_XOrg sgxddk MAIN@3625561` (1.14), matching the Cubieboard 6 `v2/`
-  user-space libraries. The display class (`dc_omapfb3_linux`, omaplfb) is built into `pvrsrvkm.ko`;
-  there is no separate `dc_owl.ko` as on Garlic/Android.
-- The driver matches `actions,atm7039c-gpu`, which is `disabled` in the stock tree.
-- Without a `gpuvdd-supply` it falls back to the `dcdc1` regulator, which also supplies the CPU
-  (`cpuvdd-supply`). It only raises the minimum voltage (`regulator_set_voltage(vdd, INT_MAX)`), but
-  check the GPU policy table voltages before enabling it.
+OpenGL ES 2.0 renders on the panel: `platform/rg35xx/tools/egltest.c` (EGL + a spinning GLES2
+triangle) runs smoothly, at about 789 fps (no vsync wait), `GL renderer: PowerVR SGX 544MP`.
+
+- Kernel: `pvrsrvkm.ko` is `SGX_DDK_Linux_XOrg sgxddk MAIN@3625561` (1.14) and needs `drm.ko`; it
+  creates `/dev/dri/card0`. The display class (`dc_omapfb3_linux`, omaplfb) is built into it (no
+  `dc_owl.ko` as on Garlic/Android). `rg35xx.dts` enables `actions,atm7039c-gpu` (stock: `disabled`).
+- Voltage: the PMIC has no GPU rail (`dcdc1` 0.7-1.4 V is the CPU, `dcdc2` 1.3-2.2 V, `dcdc3`
+  2.6-3.3 V), so the driver falls back to `dcdc1` and only raises its minimum
+  (`regulator_set_voltage(vdd, INT_MAX)`): 1025/1050/1125/1200 mV for 240/300/400/480 MHz, never
+  above what the CPU uses at 1.2 GHz. `normal_value = <0>` keeps the GPU at 300 MHz (stock 2 = 400
+  MHz); try 400 MHz once things are stable.
+- User space: Buildroot package `powervr-sgx-um` (`platform/rg35xx/buildroot/package/`), the
+  Cubieboard 6 `v2/` libraries pinned at rg35xx-cfw/cubieboard6_ubuntu_gpu_drivers@989041df, plus
+  `libdrm`, headers and `egl.pc`/`glesv2.pc` in the SDK. Desktop GL, OpenCL and the DRI window system
+  (X11) are left out.
+- Window system: only `libpvrPVR2D_FLIPWSEGL.so` works (`/etc/powervr.ini`). LINUXFB is loaded and
+  refuses the display (`eglInitialize` fails with `EGL_NOT_INITIALIZED`); FRONT and BLIT untested.
+  The native window is NULL. FLIP calls `set_par` on owlfb for every frame (thousands of
+  `set_par(0)` lines in `dmesg`). The IMG app hints are not read from the environment; to try
+  another `powervr.ini`, bind-mount a file over `/onion/etc/powervr.ini` (the stock shell has no
+  `printf`: write it with `echo`).
+- Boot: `misc/dmenu.bin` insmods `/misc/modules/{drm,pvrsrvkm}.ko` and runs
+  `pvrsrvctl --start --no-module` in the chroot, only when `drm.ko` is there (Garlic's misc has an
+  Android `pvrsrvkm.ko` that does not match these libraries). Modules are stripped of debug symbols
+  by `build.sh` (misc has about 3 MB free).
+- Next (G3): RetroArch with an EGL context for this fbdev setup and the `gl` video driver; vsync
+  (`eglSwapInterval`) still to check.
 
 ## Still from Garlic
 
@@ -142,8 +162,9 @@ and compare `md5sum`. Rollback: card in the Mac, copy `garlic-misc/*` back over 
 
 ## Open issues
 
-- **Reboot sometimes powers off** (`devchroot.sh reboot`, i.e. `reboot -f`): the first one came back,
-  the second left the device off. `owl_pm_restart()` asks the PMIC for `OWL_PMIC_REBOOT_TGT_SYS`.
+- **Reboot powers off** (`devchroot.sh reboot`, i.e. `reboot -f`): only the first one came back. With
+  USB connected the device then shows the charging screen (Garlic's or Onion's) and only powers on
+  after unplugging. `owl_pm_restart()` asks the PMIC for `OWL_PMIC_REBOOT_TGT_SYS`.
 - **ADB is slow to appear after boot** and sometimes drops; restarting the adb server on the Mac
   (`adb kill-server`) until it shows up has worked, and so has unplugging and replugging the cable. The USB monitor logs "set adaptor mode" when the
   host does not enumerate in time.

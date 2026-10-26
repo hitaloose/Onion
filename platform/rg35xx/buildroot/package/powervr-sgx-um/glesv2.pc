@@ -1,0 +1,10 @@
+prefix=/usr
+libdir=${prefix}/lib
+includedir=${prefix}/include
+
+Name: glesv2
+Description: PowerVR SGX OpenGL ES 2.0
+Version: 2.0
+Requires.private: egl
+Libs: -L${libdir} -lGLESv2
+Cflags: -I${includedir}

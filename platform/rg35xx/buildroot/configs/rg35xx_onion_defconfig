@@ -68,3 +68,6 @@ BR2_PACKAGE_DOSFSTOOLS_FSCK_FAT=y
 
 # Patches for Buildroot packages (patches/<package>/)
 BR2_GLOBAL_PATCH_DIR="$(BR2_EXTERNAL_ONION_RG35XX_PATH)/patches"
+
+# PowerVR SGX544 user-space driver (EGL/GLES on the framebuffer, Onion kernel)
+BR2_PACKAGE_POWERVR_SGX_UM=y
