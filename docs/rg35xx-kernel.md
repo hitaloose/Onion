@@ -145,8 +145,17 @@ triangle) runs smoothly, at about 789 fps (no vsync wait), `GL renderer: PowerVR
   kernel). Input stays the SDL joystick, which works without SDL video. GL renders at the
   framebuffer size (640x480), so the owldss 2x scaling is not used.
 - Benchmark, Yoshi's Island (Beetle Supafaust), CPU 1.2 GHz, unthrottled, audio off: `sdl` 112 fps,
-  `gl` 111-119 fps; with shaders `sharp-bilinear-simple` 109, `crt-pi` 81, `lcd3x` 74 (libretro
-  glsl-shaders; none are installed on the card by `dist.sh` yet).
+  `gl` 102-119 fps (the spread is load time and run to run noise).
+- Shaders: `platform/rg35xx/retroarch/shaders.sh` collects the presets in `shaders/presets.txt`
+  from libretro/glsl-shaders (pinned) with the files they use (`collect.py`), and `dist.sh` copies
+  them to `RetroArch/.retroarch/shaders`. Ten presets, one per effect, with the measured fps in
+  `presets.txt`. The SGX GLSL ES 1.00 compiler rejects a second `#define COMPAT_PRECISION` and
+  non-square matrices (`mat4x3`); `glsl_es_fix.py` rewrites both. GLSL 1.20+ features (bitwise
+  operators, array constructors) cannot be fixed that way. The GPU is the limit: shaders that
+  run per output pixel with many dependent texture reads (xbr, xbrz, mmpx, sabr, lottes) run at
+  5-40 fps. Pixel rounding (2xScaleHQ, hq2x, scale2x) is fast enough only for small screens
+  (GB/GBC/GG, GBA with less margin), because its cost scales with the source size. The GPU at
+  400 MHz (`normal_value = <2>`) should give about a third more.
 - **Vsync does nothing**: `video_vsync` on or off gives the same unthrottled speed (FLIP ignores
   `eglSwapInterval`). Games are paced by audio sync, as with the `sdl` driver.
 - Testing pitfalls: RetroArch keeps the **first** occurrence of a repeated key in a config file

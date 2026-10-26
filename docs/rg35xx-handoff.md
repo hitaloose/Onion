@@ -153,7 +153,8 @@ Fases:
 - **G3 — RetroArch GLES2: feito (2026-10-26).** Driver `gl` com contexto `mali_fbdev` (patch 0004:
   janela nativa NULL), ativado pelo `runtime.sh` quando `/dev/dri/card0` existe (senão `sdl`).
   Shaders GLSL funcionam (crt-pi 81 fps, lcd3x 74 fps no SNES). Vsync não tem efeito (FLIP); o ritmo
-  vem do áudio. Shaders ainda não vão no cartão. Detalhes em `docs/rg35xx-kernel.md`, seção GPU.
+  vem do áudio. 10 presets de shader vão no cartão (`retroarch/shaders.sh`, um por efeito; os de
+  pixel arredondado só servem para telas pequenas). Detalhes em `docs/rg35xx-kernel.md`, seção GPU.
 - **G4 — 3D:** `mupen64plus-next` (GLES2), `ppsspp`. Expectativa: N64 jogável em parte do catálogo,
   PSP só jogos leves.
 

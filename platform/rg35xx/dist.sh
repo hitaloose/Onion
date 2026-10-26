@@ -92,12 +92,14 @@ cp "$CACHE_DIR/apps/PlayActivity/playActivityUI" "$OUT/App/PlayActivity/"
 cp "$CACHE_DIR/rootfs.img" "$SYSDIR/rootfs.img"
 printf "v%s" "$VERSION" > "$SYSDIR/onionVersion/version.txt"
 
-# RetroArch built by platform/rg35xx/retroarch/build.sh and cores.sh
+# RetroArch built by platform/rg35xx/retroarch/build.sh and cores.sh, and the
+# GLSL shaders from shaders.sh
 RA_DIR="$OUT/RetroArch/.retroarch"
-mkdir -p "$RA_DIR/cores" "$RA_DIR/autoconfig"
+mkdir -p "$RA_DIR/cores" "$RA_DIR/autoconfig" "$RA_DIR/shaders"
 cp "$CACHE_DIR/retroarch/retroarch" "$OUT/RetroArch/retroarch"
 cp "$CACHE_DIR"/cores/*_libretro.so "$RA_DIR/cores/"
 cp -R "$PLATFORM_DIR/retroarch/autoconfig/." "$RA_DIR/autoconfig/"
+cp -R "$CACHE_DIR/shaders/." "$RA_DIR/shaders/"
 
 # Onion's own MainUI replaces the Miyoo one
 mv "$SYSDIR/bin/MainUI" "$OUT/miyoo/app/MainUI"
