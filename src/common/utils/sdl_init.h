@@ -22,6 +22,7 @@ bool SDL_InitDefault(void)
     // RetroArch leaves the framebuffer at 320x240 (scaled 2x by the display
     // controller): open at the panel resolution, not the current mode
     display_getResolution();
+    display_setPanelMode();
     g_display.width = DISPLAY_WIDTH;
     g_display.height = DISPLAY_HEIGHT;
 #endif
