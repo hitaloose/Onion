@@ -1,4 +1,5 @@
 // vtreset: recovers the console after an SDL 1.2 fbcon program dies.
+// (The RG35XX SDL is patched to stay on the active VT; this is a safety net.)
 // SDL fbcon switches to a free VT, puts it in KD_GRAPHICS and VT_PROCESS mode
 // and only switches back on a clean exit. After a crash that VT stays active
 // in that state and the next SDL program waits forever in VT_WAITACTIVE.
@@ -39,6 +40,10 @@ int main(int argc, char *argv[])
             perror("vtreset: KDSETMODE");
         close(active);
     }
+
+    // SDL fbcon locks VT switching while in graphics mode and only unlocks on
+    // a clean exit; while locked every VT_ACTIVATE is ignored
+    ioctl(tty0, VT_UNLOCKSWITCH, 1);
 
     if (state.v_active != target) {
         if (ioctl(tty0, VT_ACTIVATE, target) < 0 ||

@@ -1,0 +1,30 @@
+--- a/src/video/fbcon/SDL_fbevents.c	2026-10-26 00:06:45.020781584 +0000
++++ b/src/video/fbcon/SDL_fbevents.c	2026-10-26 00:06:45.031071167 +0000
+@@ -209,8 +209,8 @@
+ 			SDL_SetError("Unable to set keyboard in graphics mode");
+ 			return(-1);
+ 		}
+-		/* Prevent switching the virtual terminal */
+-		ioctl(keyboard_fd, VT_LOCKSWITCH, 1);
++		/* No VT_LOCKSWITCH: a program that dies without unlocking leaves
++		 * every later VT switch ignored */
+ 	}
+ 	return(keyboard_fd);
+ }
+@@ -258,7 +258,15 @@
+ 		if ( tty0_fd < 0 ) {
+ 			tty0_fd = dup(0); /* Maybe stdin is a VT? */
+ 		}
+-		ioctl(tty0_fd, VT_OPENQRY, &current_vt);
++		/* Stay on the active VT instead of opening a free one: switching
++		 * needs the previous owner to let go, and a program that died in
++		 * graphics mode never does, hanging the next one in VT_WAITACTIVE */
++		{
++			struct vt_stat vtstate;
++			if ( ioctl(tty0_fd, VT_GETSTATE, &vtstate) == 0 ) {
++				current_vt = vtstate.v_active;
++			}
++		}
+ 		close(tty0_fd);
+ 		if ( (geteuid() == 0) && (current_vt > 0) ) {
+ 			for ( i=0; vcs[i] && (keyboard_fd < 0); ++i ) {

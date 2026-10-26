@@ -52,6 +52,12 @@ fi
 ROOTFS=/onion
 LOOPDEVICE=/dev/block/loop7
 mkdir -p $ROOTFS
+# A new image is copied as rootfs.img.new: the running one can't be replaced
+if [ -f $SYSDIR/rootfs.img.new ]; then
+    mount -o remount,rw $SDCARD
+    $BUSYBOX mv -f $SYSDIR/rootfs.img.new $SYSDIR/rootfs.img
+    sync
+fi
 $SYSDIR/bin/loopro $LOOPDEVICE $SYSDIR/rootfs.img
 mount -r -t ext4 $LOOPDEVICE $ROOTFS
 

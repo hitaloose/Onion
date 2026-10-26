@@ -491,10 +491,14 @@ network_cmd_enable = "true"
 EOM
 
     if is_rg35xx; then
-        # Plain SDL 1.2/ALSA build instead of the Miyoo drivers (software
-        # bilinear scaling to 640x480 costs a third of the frame time), and
-        # the Miyoo joypad binds translated to the RG35XX Gamepad numbering
+        # Plain SDL 1.2/ALSA build instead of the Miyoo drivers, and the
+        # Miyoo joypad binds translated to the RG35XX Gamepad numbering.
+        # RetroArch draws 320x240 and the display controller scales the
+        # overlay 2x to the 640x480 panel: software scaling to 640x480 took
+        # most of the frame time
         cat $sysdir/res/rg35xx_retroarch.cfg >> /tmp/onion_ra_patch.cfg
+        echo 640,480 > /sys/devices/platform/owldss/overlay0/output_size
+        echo 0,0 > /sys/devices/platform/owldss/overlay0/position
     fi
 
     $sysdir/script/patch_ra_cfg.sh /tmp/onion_ra_patch.cfg
@@ -593,7 +597,11 @@ launch_game_postprocess() {
     rompath="$3"
 
     # Reset CPU frequency
-    echo ondemand > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+    if is_rg35xx; then
+        echo interactive > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+    else
+        echo ondemand > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+    fi
 
     # Reset flags
     rm /tmp/stay_awake 2> /dev/null
@@ -826,8 +834,9 @@ init_system() {
     load_settings
 
     if is_rg35xx; then
-        # dmenu.bin boots with the performance governor
-        echo ondemand > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+        # dmenu.bin boots with the performance governor; ondemand never
+        # leaves the lowest clock on this kernel, interactive does
+        echo interactive > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
 
         ip addr add 127.0.0.1/8 dev lo
         ifconfig lo up
