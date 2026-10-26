@@ -39,6 +39,12 @@ void init(int flags)
     display_init(_render_direct_to_fb);
 #endif
 
+#ifdef PLATFORM_RG35XX
+    // Lay out for the panel, not the 320x240 mode RetroArch may have left
+    g_display.width = DISPLAY_WIDTH;
+    g_display.height = DISPLAY_HEIGHT;
+#endif
+
     if (g_display.width != 640 || g_display.height != 480) {
         theme_initScaling((double)g_display.width / 640.0, zoomSurface);
     }

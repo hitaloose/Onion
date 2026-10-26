@@ -351,6 +351,11 @@ static void *_osd_thread(void *_)
  */
 void osd_showBar(int value, int value_max, uint32_t color)
 {
+#ifdef PLATFORM_RG35XX
+    // The bar is drawn straight into the framebuffer, whose mode RetroArch
+    // changes (320x240) without telling keymon
+    display_getRenderResolution();
+#endif
     _bar_timer = getMilliseconds();
     _bar_value = value;
     _bar_max = value_max;
