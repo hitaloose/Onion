@@ -1,0 +1,29 @@
+diff -ur a/src/video/fbcon/SDL_fbevents.c b/src/video/fbcon/SDL_fbevents.c
+--- a/src/video/fbcon/SDL_fbevents.c	2026-10-26 01:17:06.394460552 +0000
++++ b/src/video/fbcon/SDL_fbevents.c	2026-10-26 01:17:06.402901052 +0000
+@@ -212,6 +212,9 @@
+ 		/* No VT_LOCKSWITCH: a program that dies without unlocking leaves
+ 		 * every later VT switch ignored */
+ 	}
++	if ( keyboard_fd < 0 && SDL_getenv("SDL_FBCON_NOKEYBOARD") ) {
++		return(0);
++	}
+ 	return(keyboard_fd);
+ }
+ 
+diff -ur a/src/video/fbcon/SDL_fbvideo.c b/src/video/fbcon/SDL_fbvideo.c
+--- a/src/video/fbcon/SDL_fbvideo.c	2026-10-26 01:17:06.392991052 +0000
++++ b/src/video/fbcon/SDL_fbvideo.c	2026-10-26 01:17:06.402732135 +0000
+@@ -792,8 +792,10 @@
+ 		} 
+ 	}
+ 
+-	/* Enable mouse and keyboard support */
+-	if ( FB_OpenKeyboard(this) < 0 ) {
++	/* Enable mouse and keyboard support. SDL_FBCON_NOKEYBOARD leaves the
++	 * VT keyboard to another program sharing the VT (programs that only
++	 * read joysticks would otherwise split its key events) */
++	if ( !SDL_getenv("SDL_FBCON_NOKEYBOARD") && FB_OpenKeyboard(this) < 0 ) {
+ 		FB_VideoQuit(this);
+ 		return(-1);
+ 	}

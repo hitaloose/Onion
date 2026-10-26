@@ -449,9 +449,17 @@ launch_game() {
             cd /mnt/SDCARD/RetroArch
             force_retroarch_cfg
 
+            if is_rg35xx && [ $is_game -eq 1 ]; then
+                # RetroArch reads the joystick: leave the VT keyboard to the
+                # GameSwitcher overlay, which shares the VT and would get
+                # only part of the key events
+                export SDL_FBCON_NOKEYBOARD=1
+            fi
+
             # make the cmd_to_run shell env aware of the new timezone
             TZ="$TZ_VALUE" $sysdir/cmd_to_run.sh
             retval=$?
+            unset SDL_FBCON_NOKEYBOARD
 
             if [ -f /tmp/new_res_available ]; then
                 # Restore resolution
