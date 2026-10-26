@@ -1,5 +1,6 @@
 # Shader presets copied to the card by shaders.sh, one per effect. Measured on
-# the RG35XX (GPU at 300 MHz, CPU 1.2 GHz), unthrottled fps:
+# the RG35XX (CPU 1.2 GHz), unthrottled fps, GPU at 300 MHz and, where
+# measured, at 400 MHz (the default) in brackets:
 # SNES (Yoshi's Island) / GBA (Minish Cap) / GB (Pokemon Red).
 # Left out: duplicates (scanline, lcd3x, retro-v2), too slow (xbr, xbrz, mmpx,
 # sabr, super-eagle, fakelottes, crt-lottes, dot) and GLSL 1.20+ only
@@ -7,15 +8,15 @@
 
 # Sharp pixels at any scale: 103 SNES
 interpolation/sharp-bilinear-simple.glslp
-# Rounded/smoothed pixel art, small screens only: 46 SNES / 73 GBA / 108 GB
+# Rounded/smoothed pixel art, small screens only: 46 [59] SNES / 73 [90] GBA / 108 GB
 scalehq/2xScaleHQ.glslp
-# Rounded pixel art (hq2x): 37 SNES / 56 GBA / 83 GB
+# Rounded pixel art (hq2x): 37 [46] SNES / 56 [68] GBA / 83 GB
 hqx/hq2x.glslp
-# Rounded corners without blur (Scale2x/EPX): 45 SNES / 70 GBA / 104 GB
+# Rounded corners without blur (Scale2x/EPX): 45 [57] SNES / 70 [86] GBA / 104 GB
 scalenx/scale2x.glslp
 # CRT, light: 93 SNES
 crt/zfast-crt.glslp
-# CRT with mask and glow: 79 SNES
+# CRT with mask and glow: 79 [101] SNES
 crt/crt-pi.glslp
 # Sharp pixels with scanlines: 96 SNES
 interpolation/sharp-bilinear-scanlines.glslp

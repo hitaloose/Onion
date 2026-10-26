@@ -148,8 +148,8 @@ Fases:
   texto "android" no boot, fone de ouvido não testado.
 - **G2 — GPU acordando: feito (2026-10-26).** OpenGL ES 2.0 desenha no painel (`egltest`, ~789 fps
   sem vsync). Pacote Buildroot `powervr-sgx-um` + `libdrm`; WSEGL **FLIP** (a LINUXFB recusa o
-  display); `dmenu.bin` carrega `drm.ko`/`pvrsrvkm.ko` do `misc` e roda `pvrsrvctl`. GPU a 300 MHz por
-  enquanto. Detalhes em `docs/rg35xx-kernel.md`, seção GPU.
+  display); `dmenu.bin` carrega `drm.ko`/`pvrsrvkm.ko` do `misc` e roda `pvrsrvctl`. GPU a 400 MHz
+  (valor de fábrica; estável nos benchmarks). Detalhes em `docs/rg35xx-kernel.md`, seção GPU.
 - **G3 — RetroArch GLES2: feito (2026-10-26).** Driver `gl` com contexto `mali_fbdev` (patch 0004:
   janela nativa NULL), ativado pelo `runtime.sh` quando `/dev/dri/card0` existe (senão `sdl`).
   Shaders GLSL funcionam (crt-pi 81 fps, lcd3x 74 fps no SNES). Vsync não tem efeito (FLIP); o ritmo

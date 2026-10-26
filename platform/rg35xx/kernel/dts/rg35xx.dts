@@ -23,10 +23,12 @@
 
 	/* PowerVR SGX544 (pvrsrvkm.ko). There is no GPU regulator: the driver
 	 * falls back to dcdc1 (CPU) and only raises its minimum, at most to
-	 * 1.2 V. normal_value 2 (stock) runs at 400 MHz; any other value at
-	 * 300 MHz, used until the GPU is known to be stable */
+	 * 1.2 V. normal_value 2 (stock) runs at 400 MHz (1.125 V), any other
+	 * value at 300 MHz; 400 MHz was stable under shader benchmarks and
+	 * gives 20-30% more. At runtime: 1005 (300 MHz) or 5009 (400 MHz)
+	 * written to /sys/devices/b0300000.gpu/pvrsrv/devices */
 	gpu@b0300000 {
-		normal_value = <0x00>;
+		normal_value = <0x02>;
 		status = "okay";
 	};
 

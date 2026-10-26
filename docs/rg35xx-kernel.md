@@ -122,8 +122,11 @@ triangle) runs smoothly, at about 789 fps (no vsync wait), `GL renderer: PowerVR
 - Voltage: the PMIC has no GPU rail (`dcdc1` 0.7-1.4 V is the CPU, `dcdc2` 1.3-2.2 V, `dcdc3`
   2.6-3.3 V), so the driver falls back to `dcdc1` and only raises its minimum
   (`regulator_set_voltage(vdd, INT_MAX)`): 1025/1050/1125/1200 mV for 240/300/400/480 MHz, never
-  above what the CPU uses at 1.2 GHz. `normal_value = <0>` keeps the GPU at 300 MHz (stock 2 = 400
-  MHz); try 400 MHz once things are stable.
+  above what the CPU uses at 1.2 GHz. `normal_value = <2>` (stock) runs the GPU at 400 MHz
+  (1.125 V): stable through about 15 minutes of shader benchmarks, 20-30% faster than 300 MHz.
+  Switch at runtime by writing 1005 (300 MHz) or 5009 (400 MHz) to
+  `/sys/devices/b0300000.gpu/pvrsrv/devices`; `.../pvrsrv/runtime` shows the clocks. Temperature
+  and battery drain at 400 MHz were not measured.
 - User space: Buildroot package `powervr-sgx-um` (`platform/rg35xx/buildroot/package/`), the
   Cubieboard 6 `v2/` libraries pinned at rg35xx-cfw/cubieboard6_ubuntu_gpu_drivers@989041df, plus
   `libdrm`, headers and `egl.pc`/`glesv2.pc` in the SDK. Desktop GL, OpenCL and the DRI window system
@@ -154,8 +157,8 @@ triangle) runs smoothly, at about 789 fps (no vsync wait), `GL renderer: PowerVR
   operators, array constructors) cannot be fixed that way. The GPU is the limit: shaders that
   run per output pixel with many dependent texture reads (xbr, xbrz, mmpx, sabr, lottes) run at
   5-40 fps. Pixel rounding (2xScaleHQ, hq2x, scale2x) is fast enough only for small screens
-  (GB/GBC/GG, GBA with less margin), because its cost scales with the source size. The GPU at
-  400 MHz (`normal_value = <2>`) should give about a third more.
+  (GB/GBC/GG and, at 400 MHz, GBA), because its cost scales with the source size; on SNES it
+  stays just under 60 fps even at 400 MHz.
 - **Vsync does nothing**: `video_vsync` on or off gives the same unthrottled speed (FLIP ignores
   `eglSwapInterval`). Games are paced by audio sync, as with the `sdl` driver.
 - Testing pitfalls: RetroArch keeps the **first** occurrence of a repeated key in a config file
@@ -194,7 +197,9 @@ and compare `md5sum`. Rollback: card in the Mac, copy `garlic-misc/*` back over 
   `earphone_detect2_gpios`, which this codec driver does not know (it uses GPIO 28).
 - **FAT mounts use `errors=remount-ro`** (Garlic: `errors=continue`): a real FAT error makes the card
   read-only until reboot.
-- **Leaving GameSwitcher for the game list powered the device off** a few times (with the `sdl`
-  RetroArch driver, GPU modules loaded); not reproduced after RetroArch moved to `gl`.
+- **Leaving GameSwitcher for the game list powers the device off** now and then: seen with the
+  `sdl` RetroArch driver and again with `gl` and the GPU at 400 MHz. Not investigated yet. No log
+  survives it (`runtime.log` and `dmesg` start over at boot); capturing `/proc/kmsg` to the card
+  with a `sync` every second (as tried once) is the way to catch it.
 - **Unplugging USB once rebooted the device.**
 - `misc/ramdisk.img`, the bootloaders and `uenv.txt` are still Garlic's (see above).
