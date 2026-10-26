@@ -79,6 +79,20 @@ RetroArch config, `strings` on its binaries). Facts marked **TODO** must be fill
   cpufreq on cpu0, `interactive` governor, steps 504000..1488000 kHz.
 - **known**: 240000 504000 720000 840000 1008000 1104000 1200000 1296000 1392000 1488000 kHz,
   driver `owl_cpu0`, cpus 0-3 share one policy; governors include `userspace` and `interactive`.
+- **known**: `ondemand` stays at 240 MHz under full load on this kernel; `interactive` (used by the
+  stock firmware and Garlic) scales up. Garlic leaves `scaling_max_freq` at 1008000.
+- **known**: at 1488 MHz with RetroArch at full load and USB charging connected, the device hung
+  (black screen, adb gone) three times; on battery the same load finished. 1200 MHz under the same
+  load with USB charging was stable. Onion caps the maximum at 1200 MHz.
+
+## Display controller (owldss)
+- **known**: `/sys/devices/platform/owldss/overlay0..3` (OMAP DSS2 style). overlay0 (`vid1`) shows
+  fb0 on the LCD (`manager` primary); overlays 2/3 go to HDMI (fb1).
+- **known**: `input_size` follows the fb0 mode and `output_size`/`position` are writable: a 320x240
+  fb0 mode with `output_size` 640,480 is scaled 2x by hardware (checked on screen). RetroArch draws
+  320x240 and lets the controller scale it.
+- **known**: SDL 1.2 fbcon does not set arbitrary modes: it picks the nearest standard mode
+  (320x200, 320x240, 640x480) and centers smaller surfaces in it.
 
 ## Suspend
 - **known**: `/sys/power/state` offers `freeze mem disk`; `wake_lock` and `autosleep` exist (Android PM).
