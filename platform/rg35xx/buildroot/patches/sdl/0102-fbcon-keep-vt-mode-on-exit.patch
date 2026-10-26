@@ -1,0 +1,16 @@
+diff -ur a/src/video/fbcon/SDL_fbevents.c b/src/video/fbcon/SDL_fbevents.c
+--- a/src/video/fbcon/SDL_fbevents.c	2026-10-26 01:29:31.960791300 +0000
++++ b/src/video/fbcon/SDL_fbevents.c	2026-10-26 01:29:31.969099341 +0000
+@@ -221,9 +221,9 @@
+ void FB_LeaveGraphicsMode(_THIS)
+ {
+ 	if ( FB_InGraphicsMode(this) ) {
+-		ioctl(keyboard_fd, KDSETMODE, KD_TEXT);
+-		ioctl(keyboard_fd, KDSKBMODE, saved_kbd_mode);
+-		tcsetattr(keyboard_fd, TCSAFLUSH, &saved_kbd_termios);
++		/* Leave the VT as it is: programs share the active VT and set it up
++		 * when they start, so restoring the mode found at start would undo
++		 * the setup of a program that started after us */
+ 		saved_kbd_mode = -1;
+ 
+ 		/* Head back over to the original virtual terminal */
