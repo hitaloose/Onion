@@ -194,7 +194,8 @@ Pendências de sistema, antes da G4 (N64/PSP). Lista completa na seção "Open i
 - ~~texto "android" na tela durante o boot~~: o `init` escreve "A N D R O I D" no `tty0` quando
   falta `/initlogo.rle`; o `ramdisk/build.sh` gera um com a tela de boot do Onion, e também o
   `boot_logo.bmp.gz` da U-Boot (`tools/bootlogo.py`). Com o SDL `0104` e o `vtreset` sem
-  `KD_TEXT`, U-Boot → `init` → `bootScreen` → MainUI passa sem piscar em preto. Testado (2026-10-30);
+  `KD_TEXT`, U-Boot → `init` → `bootScreen` → MainUI passa sem piscar em preto. Testado (2026-10-30),
+  inclusive entrar e sair de jogo (MENU segurado e GameSwitcher) sem restos de imagem;
 - ~~FAT com `errors=remount-ro`~~: o `ramdisk/build.sh` põe `errors=continue` no mount do
   `loadapp.sh` (o `fat_remount` do 3.10 ignora opções, só vale na montagem). Testado (2026-10-30);
 - fone de ouvido não testado;
