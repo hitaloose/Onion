@@ -2,9 +2,6 @@
 
 ## Open issues
 
-- **Battery header on battery power is still unconfirmed.** The gauge reports 0% until it measures,
-  and while charging the header shows the charging icon, so the header at boot has only been checked
-  on USB. Test after the next reboot without the cable.
 - **Hi-res frames are downscaled**: RetroArch draws 320x240 for the hardware 2x scaling, so SNES
   hi-res (512 wide) and PS1 640x480 modes lose detail. Could switch to a 640x480 mode for those.
 - **CPU clock**: capped at 1200 MHz because 1488 MHz hung the device under load while charging.
@@ -18,6 +15,10 @@
   dirty flag on remount read-only. Real corruption shows as "invalid cluster chain" errors.
 
 ## Fixed, for the record
+
+- Battery shown empty for ~10 s after boot on battery power: the gauge reads 0 until about 5 s of
+  uptime, batmon read that 0 on start, wrote `/tmp/percBat` = 0 and only checked again 15 s later.
+  On the RG35XX it now leaves percBat unwritten and retries every second until the first real reading.
 
 - Battery 0% at boot turned into a shutdown on the next game exit: the gauge reports 0% until it
   measures, keymon armed `/tmp/.lowBat` from that 0, and `runtime.sh` only acts on the flag when a

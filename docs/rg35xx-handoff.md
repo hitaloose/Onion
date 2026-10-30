@@ -102,7 +102,7 @@ Implantar com o aparelho rodando o Onion (ADB habilitado por `/misc/enableADB`):
 ## 5. Pendências (ver também `docs/rg35xx-status.md`)
 
 1. Kernel próprio / independência do kernel do Garlic (resolvido pelo plano G1 abaixo).
-2. Bateria mostra 0% nos primeiros ~7-10 s depois de ligar (pendente, ver 6b).
+2. ~~Bateria mostra 0% nos primeiros ~7-10 s depois de ligar~~ (corrigido no batmon, ver 6b).
 3. 60 Hz (painel em 56,4 Hz; pixclock ~47026 ps daria 60 Hz) e vsync (`OWLFB_WAITFORVSYNC`;
    referência open source: MinUI do shauninman, plataforma rg35xx).
 4. Clock por sistema e `target_loads` do `interactive` (bateria), vídeo em thread para PS1.
@@ -181,8 +181,11 @@ Pendências de sistema, antes da G4 (N64/PSP). Lista completa na seção "Open i
 - ~~sair do jogo sem o GameSwitcher exigia soltar MENU no momento certo~~: o RetroArch não lia os
   comandos UDP com o botão de atalho segurado (`retroarch/patches/0005`, ver seção 4). Testado
   (2026-10-30): segurar MENU sai do jogo;
-- nível da bateria leva ~7 s para aparecer depois de ligar (a gauge reporta 0% até a primeira
-  medida);
+- ~~nível da bateria leva ~7 s para aparecer depois de ligar~~: a gauge já mede aos ~5 s de uptime,
+  mas o batmon lia o 0 de antes da primeira medida, gravava `percBat=0` e só voltava a medir 15 s
+  depois. Agora, até a primeira leitura real, um 0 não é gravado e ele tenta de novo a cada segundo
+  (os cabeçalhos leem a gauge direto enquanto `percBat` não existe). Testado sem cabo (2026-10-30):
+  96% gravado aos 5,5 s;
 - ~~ADB some depois do boot~~: estável desde o `0004` (era a carga oscilando na porta USB);
 - texto "android" na tela durante o boot;
 - fone de ouvido não testado; FAT com `errors=remount-ro`;

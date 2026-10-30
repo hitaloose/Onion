@@ -105,6 +105,14 @@ int main(int argc, char *argv[])
                     is_suspended, current_percentage, warn_at);
 
                 ticks = -1;
+#ifdef PLATFORM_RG35XX
+                // The gauge reads 0 until it has measured the battery after
+                // boot: check again next second and leave percBat unwritten
+                if (current_percentage == 0 && old_percentage == -1) {
+                    current_percentage = old_percentage;
+                    ticks = CHECK_BATTERY_TIMEOUT_S - 1;
+                }
+#endif
             }
 
             if (current_percentage != old_percentage) {
@@ -130,7 +138,7 @@ int main(int argc, char *argv[])
         }
 
 #ifdef PLATFORM_DEVICE
-        if (is_suspended || current_percentage == 500) {
+        if (is_suspended || current_percentage == 500 || current_percentage < 0) {
             batteryWarning_hide();
         }
         else if (current_percentage < warn_at && !warningDisabled()) {
