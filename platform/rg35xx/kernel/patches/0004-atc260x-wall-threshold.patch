@@ -1,0 +1,18 @@
+Without an external DC-DC (ext_dcdc_exist = 0, the RG35XX) the charger treats
+WALLV below 4300 mV as "adapter unplugged". A USB port sags to about 4.28 V at
+660 mA of charge current, so the charger turned itself off and on every few
+seconds (charger screen blinking, Mains online/offline uevents). The Garlic OS
+kernel (Anbernic driver, newer than this tree) uses 3800 mV in this case: at
+4.18 V and 800 mA it keeps charging.
+
+--- a/drivers/power/atc260x_power/atc260x_power_main.c
++++ b/drivers/power/atc260x_power/atc260x_power_main.c
+@@ -2451,7 +2451,7 @@
+ 	} 
+ 	else 
+ 	{
+-		charger->wall_v_thresh = 4300;   /*modified by cxj @2015-01-16:4200-->4300*/
++		charger->wall_v_thresh = 3800;
+ 	}
+     
+ 	property = of_get_property(charger->node, "enable_vbus_current_limited", &len);
