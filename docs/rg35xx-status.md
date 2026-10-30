@@ -10,7 +10,11 @@
   `state.h`, `apps.h`, `randomGamePicker.c` and some scripts. On the RG35XX the loader only prints
   a warning and goes on.
 - **mGBA core**: the libretro fork builds with CMake, not `Makefile.libretro`; `cores.sh` skips it.
-- **Expert tab, RApp and standalone emulators** are not in MainUI yet.
+- **MainUI**: the Miyoo screens are redrawn from the Onion theme files (`docs/rg35xx-mainui.md`).
+  Still missing or unconfirmed: the box art position in game lists, the Miyoo Settings screen (the
+  tab opens Tweaks), the empty list image, list marks and pop-up menus, theme background music.
+- **RApp packages** are not copied to the card by `dist.sh`, so the Expert tab is empty; standalone
+  emulators are not built.
 - The FAT partition always logs "Volume was not properly unmounted": kernel 3.10 does not clear the
   dirty flag on remount read-only. Real corruption shows as "invalid cluster chain" errors.
 

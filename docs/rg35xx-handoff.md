@@ -4,6 +4,7 @@ Documento para continuar o trabalho em outra sessão. Complementa:
 - `docs/rg35xx-hardware.md`: fatos de hardware medidos no aparelho
 - `docs/rg35xx-status.md`: pendências conhecidas
 - `docs/rg35xx-kernel.md`: kernel próprio (fase G1)
+- `docs/rg35xx-mainui.md`: telas do MainUI do Miyoo reimplementadas a partir dos temas
 
 Repositório: fork `git@hitaloose.github.com:hitaloose/Onion.git` (remote `origin`), branch
 `rg35xx-port`. `upstream` = OnionUI/Onion (só para puxar atualizações; nada é enviado para lá).
@@ -14,7 +15,8 @@ O dono do projeto pretende mantê-lo como port no próprio GitHub, sem mandar PR
 - Boot real: `misc/dmenu.bin` próprio → monta `.tmp_update/rootfs.img` (Buildroot, glibc armhf,
   **somente leitura** via `loopro`, tmpfs em /tmp, /run, /appconfigs) → chroot → `updater` →
   `runtime.sh` do Onion. O `dmenu.bin` original fica em `misc/dmenu.bin.stock`.
-- MainUI próprio (`src/mainUI/`), temas do Onion, GameSwitcher (overlay com captura da tela),
+- MainUI próprio (`src/mainUI/`) com as telas do Miyoo (tela inicial com abas, grade de Jogos e
+  Expert, listas, Apps) desenhadas pelos arquivos dos temas do Onion (`docs/rg35xx-mainui.md`), GameSwitcher (overlay com captura da tela),
   keymon (volume, brilho, suspensão, MENU curto/longo/duplo), batmon, desligamento limpo.
 - RetroArch 1.22.2 + patches do Onion + patches RG35XX; 9 cores compilados; 14 sistemas.
 - Performance (benchmark sem limite de FPS, CPU limitada a 1,2 GHz, com USB): SNES 84, GB 218,
@@ -39,7 +41,7 @@ compatibilidade com o kernel de fábrica da Anbernic. Ver o plano da GPU (seçã
 | `platform/rg35xx/tools/devchroot.sh`, `cleanreboot.sh` | Desenvolvimento via ADB |
 | `platform/rg35xx/tools/{padmapd,vtreset,loopro}` | `src/padmapd/padmapd.c`, `tools/vtreset.c`, `tools/loopro.c` |
 | `src/padmapd/` | Gamepad → teclado uinput com keycodes do Miyoo (`/dev/input/onion-kbd`), repetição 250/50 ms |
-| `src/mainUI/` | Launcher (menu.h com lista "em janela": um ListItem tem ~31 KB) |
+| `src/mainUI/` | Launcher: `library.h` (Emu/RApp/App, recentes, favoritos), `menu.h` (entradas leves: um ListItem tem ~31 KB), `views.h` (telas do Miyoo a partir do tema) |
 | `static/build/.tmp_update/runtime.sh` | Ramos `is_rg35xx` (detecção pelo `/sys/class/power_supply/atc260x-usb`) |
 | `static/build/.tmp_update/res/rg35xx_retroarch.cfg` | Drivers, 320x240, binds do joystick RG35XX (aplicado por `force_retroarch_cfg`) |
 | `src/common/config.mk` | `PLATFORM_RG35XX`, `PLATFORM_DEVICE`, flags Cortex-A9 |
@@ -68,6 +70,10 @@ Implantar com o aparelho rodando o Onion (ADB habilitado por `/misc/enableADB`):
   `swapoff`, desmonta o chroot, remonta o cartão somente leitura e `reboot -f`). **Nunca `adb reboot`.**
 - `misc` é montado read-only: `mount -o remount,rw /misc` para gravar e voltar para `ro`.
 - Rodar programa SDL de teste: `devchroot.sh run <cmd>` (desacoplado do pty do adb).
+- Testar telas sem mexer no aparelho: `tools/presskeys.sh right a` aperta botões (eventos no
+  `onion-kbd` do padmapd, com SYN; o `sendkeys` do Onion não manda SYN e o SDL não vê) e
+  `tools/screenshot.sh out.png` captura o framebuffer (BGRA). O MainUI troca sem reboot:
+  `MainUI.new` + `mv` e `kill` no processo, o `runtime.sh` abre o novo.
 
 ## 4. Armadilhas já descobertas (não repetir)
 
@@ -111,7 +117,9 @@ Implantar com o aparelho rodando o Onion (ADB habilitado por `/misc/enableADB`):
    referência open source: MinUI do shauninman, plataforma rg35xx).
 4. Clock por sistema e `target_loads` do `interactive` (bateria), vídeo em thread para PS1.
 5. `LD_PRELOAD=libpadsp.so` fixo em GameSwitcher/state.h/apps.h/randomGamePicker e scripts.
-6. mGBA (fork libretro usa CMake), aba Expert/RApp, mais sistemas/cores, instalador (Fase 6),
+6. Telas do MainUI ainda sem referência (capa na lista, Configurações do Miyoo, lista vazia, pop-ups):
+   ver "O que falta" em `docs/rg35xx-mainui.md`.
+7. mGBA (fork libretro usa CMake), pacotes RApp no cartão (a aba Expert já existe), mais sistemas/cores, instalador (Fase 6),
    HDMI, segundo cartão, Tweaks sem opções do Miyoo.
 
 ## 6. Plano da GPU (PowerVR SGX544MP1): próximo trabalho
@@ -209,6 +217,9 @@ Pendências de sistema, antes da G4 (N64/PSP). Lista completa na seção "Open i
   (2100 mAh), testado (2026-10-30). Tabela em `docs/rg35xx-kernel.md`, "Stock or Garlic?";
 - piscada preta entre o logo da U-Boot e o do `init` no boot sem cabo (com cabo não pisca): não
   investigado, deixado para depois;
+- aparência do Onion no MainUI (2026-10-30): tela inicial com abas, grade de Jogos 4x2, Expert 3x3,
+  listas e Apps desenhados pelos arquivos do tema, conferidos contra capturas do Miyoo e testados com
+  Silky, ONION PS e Analogue. Pendências em `docs/rg35xx-mainui.md`, "O que falta";
 
 ## 7. Aparelho de teste (2026-10-30)
 
