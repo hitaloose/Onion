@@ -10,6 +10,7 @@
 #include "utils/file.h"
 #include "utils/flags.h"
 #include "utils/log.h"
+#include "utils/padsp.h"
 
 #define MAX_SYSTEMS 500
 #define ERROR_CODE_NO_GAME_FOUND 99
@@ -377,6 +378,8 @@ int main(int argc, char *argv[])
     case MODE_RECENTS:
         addRandomFromJson(mode == MODE_FAVORITES ? PATH_FAVORITES
                                                  : PATH_RECENTS);
+        if (total_games_count == 0)
+            return ERROR_CODE_NO_GAME_FOUND;
         random_number = rand() % total_games_count;
         break;
     case MODE_SINGLE_SYSTEM:
@@ -402,6 +405,10 @@ int main(int argc, char *argv[])
             perror("Emu folder does not exists");
         }
 
+        // Division by zero traps on the Cortex-A9 (no hardware divide)
+        if (total_games_count == 0)
+            return ERROR_CODE_NO_GAME_FOUND;
+
         int random_weighted_index = rand() % total_games_count;
         printf_debug("total: %d\n", total_games_count);
         printf_debug("rwi: %d\n", random_weighted_index);
@@ -425,7 +432,7 @@ int main(int argc, char *argv[])
     char cmd_to_run[STR_MAX * 3 + 65];
     snprintf(
         cmd_to_run, STR_MAX * 3 + 64,
-        "LD_PRELOAD=/mnt/SDCARD/miyoo/app/../lib/libpadsp.so \"%s\" \"%s\"",
+        PADSP_PRELOAD "\"%s\" \"%s\"",
         chosen_game->launch_path, chosen_game->path);
 
     FILE *fp;

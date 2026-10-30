@@ -102,7 +102,12 @@ os nomes dos consoles somem na grade, como no Miyoo.
 9. **Grade de Jogos**: posições tiradas de foto em perspectiva (±5 px) e o tamanho da fonte
    (`grid3x4`) é suposição.
 10. **Navegação**: na tela inicial e nas grades ←/→ dão a volta no fim da lista (↑/↓ param na borda);
-    o comportamento do Miyoo nesse ponto não foi visto. `X`, `SELECT` e `START` não fazem nada.
+    o comportamento do Miyoo nesse ponto não foi visto. `SELECT` e `START` não fazem nada; `X` é
+    do keymon (atalho do Tweaks, padrão Search, que não vai no cartão).
+13. **Y**: com `mainui_button_y = "glo"` (padrão do Onion, `config/keymap.json`) abre o menu de
+    opções do jogo (GLO) como no Miyoo: o MainUI lança a entrada com `/tmp/launch_alt` e o runtime
+    abre o `game_list_options.sh`; o MainUI grava `/tmp/state.json` (só o `type` da aba, uma chave
+    por linha, que é o que o GLO lê). Sem essa opção, Y marca/desmarca favorito. Testado (2026-10-30).
 11. **Logo no canto superior esquerdo**: é a imagem `miyoo-topbar.png` de cada tema (no Silky e no
     ONION PS ela diz "onion"; no tema de fábrica da Miyoo dizia "MIYOO"). Não é texto do MainUI.
 12. **Ícones de cabeçalho extras** (fone de ouvido `headphone-icon.png`): não mostrados.

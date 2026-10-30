@@ -3,6 +3,7 @@
 
 #include "./file.h"
 #include "./log.h"
+#include "./padsp.h"
 #include "./str.h"
 
 typedef struct {
@@ -133,7 +134,7 @@ void set_cmd_app(const char *app_dir_name)
     char cmd[STR_MAX * 4];
     snprintf(cmd, STR_MAX * 4 - 1,
              "cd %s; chmod a+x ./%s; "
-             "LD_PRELOAD=/mnt/SDCARD/miyoo/app/../lib/libpadsp.so ./%s",
+             PADSP_PRELOAD "./%s",
              app_dir, launch, launch);
     file_put_sync(fp, "/tmp/cmd_to_run.sh", "%s", cmd);
 }

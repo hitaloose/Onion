@@ -71,6 +71,10 @@ Implantar com o aparelho rodando o Onion (ADB habilitado por `/misc/enableADB`):
   `swapoff`, desmonta o chroot, remonta o cartão somente leitura e `reboot -f`). **Nunca `adb reboot`.**
 - `misc` é montado read-only: `mount -o remount,rw /misc` para gravar e voltar para `ro`.
 - Rodar programa SDL de teste: `devchroot.sh run <cmd>` (desacoplado do pty do adb).
+- Atualizar o cartão sem reboot: `tools/sync.sh [-n]` compara md5 do `cache/rg35xx/sd` com o
+  cartão e troca só o que mudou (`.new` + `mv`, nunca apaga; `config.json`/`retroarch.cfg` só se
+  faltarem). Benchmark de core: `tools/bench.sh CORE ROM [FRAMES] [MHZ]` (sem limite de FPS, áudio
+  e vsync desligados, saves e opções em `/tmp`, FPS pela diferença entre FRAMES/5 e FRAMES).
 - Testar telas sem mexer no aparelho: `tools/presskeys.sh right a` aperta botões (eventos no
   `onion-kbd` do padmapd, com SYN; o `sendkeys` do Onion não manda SYN e o SDL não vê) e
   `tools/screenshot.sh out.png` captura o framebuffer (BGRA). O MainUI troca sem reboot:
@@ -108,6 +112,8 @@ Implantar com o aparelho rodando o Onion (ADB habilitado por `/misc/enableADB`):
   enquanto o `enable_hotkey` (MENU, botão 9) estava segurado: `input_driver_poll()` retorna cedo com
   `INP_FLAG_BLOCK_LIBRETRO_INPUT`. Por isso segurar MENU não saía do jogo (só soltando dentro da
   janela das tentativas). Corrigido em `retroarch/patches/0005`.
+- Divisão inteira por zero dá SIGFPE no Cortex-A9 (sem divisão por hardware, a libgcc gera o sinal);
+  no A7 do Miyoo dá 0 em silêncio. Código do Onion que funciona no Miyoo pode cair aqui.
 - `libpng`: headers do Onion são 1.2; no RG35XX `png/png.h` aponta para o 1.6 do sysroot.
 
 ## 5. Pendências (ver também `docs/rg35xx-status.md`)
@@ -130,7 +136,9 @@ Implantar com o aparelho rodando o Onion (ADB habilitado por `/misc/enableADB`):
    thread no PS1: o PCSX ReARMed já sai com `USE_ASYNC_GPU` e `gpu_thread_rendering = "auto"` liga
    (4 núcleos online). Tekken 3, save state, 1200 MHz, sem limite: 75 FPS sem a thread, 88 com ela;
    `spu_thread` não muda nada (87).
-5. `LD_PRELOAD=libpadsp.so` fixo em GameSwitcher/state.h/apps.h/randomGamePicker e scripts.
+5. ~~`LD_PRELOAD=libpadsp.so` fixo~~ (2026-10-30): `PADSP_PRELOAD` nos programas C, o `dist.sh`
+   tira dos scripts; o GLO e o runtime liam o caminho do emulador da 2ª palavra do
+   `cmd_to_run.sh` (dependia do prefixo). O GLO agora abre com Y (`docs/rg35xx-mainui.md`, item 13).
 6. Telas do MainUI ainda sem referência (capa na lista, Configurações do Miyoo, lista vazia, pop-ups):
    ver "O que falta" em `docs/rg35xx-mainui.md`.
 7. mGBA (fork libretro usa CMake), pacotes RApp no cartão (a aba Expert já existe), mais sistemas/cores, instalador (Fase 6),

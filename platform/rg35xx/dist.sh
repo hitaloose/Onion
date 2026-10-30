@@ -74,6 +74,13 @@ echo "$EMU_PACKAGES" | while read -r package; do
 done
 "$ROOT_DIR/static/packages/common/apply.sh" "$OUT/Emu" > /dev/null
 
+# Miyoo libpadsp routes OSS audio to audioserver; the RG35XX uses ALSA and has
+# no libpadsp, so the preload is dropped from the scripts (the C programs use
+# PADSP_PRELOAD from src/common/utils/padsp.h)
+grep -rlI --exclude=runtime.sh "libpadsp\.so" "$OUT" | while read -r f; do
+    perl -pi -e 's#LD_PRELOAD=(/mnt/SDCARD/miyoo(/app/\.\.)?/lib|\$miyoodir/lib)/libpadsp\.so ##g' "$f"
+done
+
 # Drop the Miyoo binaries and the Miyoo libraries (SDL, audio, MainUI hooks)
 find "$OUT" -type f -exec sh -c 'head -c 4 "$1" | grep -q "^.ELF" && rm -f "$1"' _ {} \;
 rm -rf "$OUT/miyoo/lib" "$OUT/8188fu.ko"

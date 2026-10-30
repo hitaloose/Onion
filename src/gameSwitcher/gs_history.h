@@ -12,6 +12,7 @@
 #include "utils/file.h"
 #include "utils/json.h"
 #include "utils/log.h"
+#include "utils/padsp.h"
 #include "utils/str.h"
 
 #include "../playActivity/cacheDB.h"
@@ -222,7 +223,7 @@ void readFirstEntry()
 
 void getLaunchCommand(Game_s *game, char *launchCommand)
 {
-    snprintf(launchCommand, 4096, "LD_PRELOAD=/mnt/SDCARD/miyoo/app/../lib/libpadsp.so \"%s\" \"%s\"", game->recentItem.launch, game->recentItem.rompath);
+    snprintf(launchCommand, 4096, PADSP_PRELOAD "\"%s\" \"%s\"", game->recentItem.launch, game->recentItem.rompath);
 }
 
 #endif // GAME_SWITCHER_HISTORY_H

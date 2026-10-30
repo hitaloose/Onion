@@ -7,6 +7,7 @@
 #include "utils/flags.h"
 #include "utils/hash.h"
 #include "utils/log.h"
+#include "utils/padsp.h"
 #include "utils/process.h"
 #include "utils/str.h"
 
@@ -408,7 +409,7 @@ void resumeGame(int index)
 
             fclose(file);
             file = NULL;
-            sprintf(LaunchCommand, "LD_PRELOAD=/mnt/SDCARD/miyoo/app/../lib/libpadsp.so \"%s\" \"%s\"", launch, rompath);
+            sprintf(LaunchCommand, PADSP_PRELOAD "\"%s\" \"%s\"", launch, rompath);
 
             remove("/mnt/SDCARD/.tmp_update/.runGameSwitcher");
 

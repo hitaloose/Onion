@@ -89,7 +89,7 @@ main() {
         exit
     fi
 
-    emupath=$(dirname $(echo "$cmd" | awk '{ gsub(/"/, "", $2); st = index($2,".."); if (st) { print substr($2,0,st) } else { print $2 } }'))
+    emupath=$(dirname "$(echo "$cmd" | awk -F'"' '{ st = index($2,".."); if (st) { print substr($2,0,st) } else { print $2 } }')")
 
     if [ "$emupath" == "/mnt/SDCARD/App" ]; then
         romtype=$ROM_TYPE_APP

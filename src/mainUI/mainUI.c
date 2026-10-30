@@ -20,6 +20,7 @@
 #include "theme/background.h"
 #include "theme/sound.h"
 #include "theme/theme.h"
+#include "utils/flags.h"
 #include "utils/keystate.h"
 #include "utils/log.h"
 #include "utils/sdl_init.h"
@@ -137,6 +138,33 @@ static void save_state(void)
     fclose(fp);
 }
 
+// Tab of the last launch for the Onion game list options (GLO), which reads
+// the "type" of the second level of the Miyoo /tmp/state.json, one key a line
+static void write_tab_state(void)
+{
+    int type = -1;
+    FILE *fp;
+
+    if (depth > 0) {
+        switch (stack[1].kind) {
+        case MENU_RECENTS: type = 10; break;
+        case MENU_FAVORITES: type = 2; break;
+        case MENU_SYSTEMS: type = 1; break;
+        case MENU_EXPERT: type = 16; break;
+        case MENU_APPS: type = 3; break;
+        default: break;
+        }
+    }
+    if (type < 0 || !(fp = fopen("/tmp/state.json", "w"))) {
+        remove("/tmp/state.json");
+        return;
+    }
+    fprintf(fp, "{\n\t\"list\":\t[{\n\t\t\t\"title\":\t157,\n\t\t\t\"type\":\t0,\n"
+                "\t\t}, {\n\t\t\t\"title\":\t0,\n\t\t\t\"type\":\t%d,\n\t\t}]\n}\n",
+            type);
+    fclose(fp);
+}
+
 static void write_command(const char *launch, const char *rompath)
 {
     FILE *fp = fopen(CMD_PATH, "w");
@@ -149,6 +177,7 @@ static void write_command(const char *launch, const char *rompath)
     fflush(fp);
     fsync(fileno(fp));
     fclose(fp);
+    write_tab_state();
 }
 
 static void launch_game(JsonGameEntry *entry)
@@ -212,6 +241,23 @@ static void activate(bool launch)
     case ENTRY_EMPTY:
         break;
     }
+}
+
+// Y set to "glo" in Tweaks: as on the Miyoo, the entry is launched with
+// /tmp/launch_alt (keymon also sets it on Y) and the runtime opens the game
+// list options instead of the game. Elsewhere the flag is dropped, or the next
+// launch would open the options
+static void open_game_options(void)
+{
+    MenuEntry *entry = menu_current(current());
+
+    if (entry && (entry->type == ENTRY_ROM || entry->type == ENTRY_GAME ||
+                  entry->type == ENTRY_APP)) {
+        temp_flag_set("launch_alt", true);
+        activate(true);
+    }
+    else
+        temp_flag_set("launch_alt", false);
 }
 
 // Reopens the menus and selections saved before the last launch
@@ -360,8 +406,12 @@ int main(int argc, char *argv[])
             }
             else if (changed_key == SW_BTN_Y && keystate[SW_BTN_Y] == PRESSED) {
                 sound_change();
-                toggle_favorite();
-                changed = true;
+                if (strcmp(settings.mainui_button_y, "glo") == 0)
+                    open_game_options();
+                else {
+                    toggle_favorite();
+                    changed = true;
+                }
             }
 
             if (current()->active != before && depth == depth_before) {

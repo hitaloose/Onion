@@ -7,9 +7,9 @@
 - **CPU clock**: capped at 1200 MHz because 1488 MHz hung the device under load while charging.
   1296/1392 MHz untested. Games run with the performance governor at the core's `cpuclock.txt`
   (RetroArch patch 0006, defaults in `platform/rg35xx/configs/`); a Miyoo value above 1200 is capped.
-- **`LD_PRELOAD=.../libpadsp.so`** is still hardcoded in GameSwitcher (`gs_history.h`),
-  `state.h`, `apps.h`, `randomGamePicker.c` and some scripts. On the RG35XX the loader only prints
-  a warning and goes on.
+- **Random Game app** is not on the card: `randomGamePicker` picks from the Miyoo MainUI's
+  `<system>_cache6.db` SQLite caches, which our MainUI does not write, so it finds no games. It
+  needs a fallback that scans the ROM folders (or the MainUI writing the caches).
 - **mGBA core**: the libretro fork builds with CMake, not `Makefile.libretro`; `cores.sh` skips it.
 - **MainUI**: the Miyoo screens are redrawn from the Onion theme files (`docs/rg35xx-mainui.md`).
   Still missing or unconfirmed: the box art position in game lists, the Miyoo Settings screen (the
@@ -23,6 +23,13 @@
   dirty flag on remount read-only. Real corruption shows as "invalid cluster chain" errors.
 
 ## Fixed, for the record
+
+- `LD_PRELOAD=.../libpadsp.so` (Miyoo OSS-to-audioserver shim): the C programs use `PADSP_PRELOAD`
+  (`src/common/utils/padsp.h`, empty off the Miyoo) and `dist.sh` drops the preload from the
+  scripts it copies. The GLO and the runtime's `.miyoocmd` branch read the emulator path from the
+  second word of `cmd_to_run.sh`, which only worked with the prefix (our MainUI never wrote it):
+  they now take the first quoted field. `randomGamePicker` crashed with SIGFPE on `% 0` with no
+  games (the Cortex-A9 divides in libgcc, which traps; the Miyoo's A7 divide returns 0).
 
 - Battery shown empty for ~10 s after boot on battery power: the gauge reads 0 until about 5 s of
   uptime, batmon read that 0 on start, wrote `/tmp/percBat` = 0 and only checked again 15 s later.

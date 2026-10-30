@@ -266,7 +266,7 @@ launch_main_ui() {
     cd $miyoodir/app
     PATH="$miyoodir/app:$PATH" \
         LD_LIBRARY_PATH="$miyoodir/lib:/config/lib:/lib" \
-        LD_PRELOAD="$miyoodir/lib/libpadsp.so" \
+        LD_PRELOAD="$(is_rg35xx || echo "$miyoodir/lib/libpadsp.so")" \
         ./MainUI 2>&1 > /dev/null
 
     # Merge the last game launched into the recent list
@@ -435,7 +435,7 @@ launch_game() {
     if [ $is_game -eq 0 ] || [ -f "$rompath" ]; then
         if [ "$romext" == "miyoocmd" ]; then
             /mnt/SDCARD/.tmp_update/script/remove_last_recent_entry.sh
-            emupath=$(dirname $(echo "$cmd" | awk '{ gsub(/"/, "", $2); st = index($2,".."); if (st) { print substr($2,0,st) } else { print $2 } }'))
+            emupath=$(dirname "$(echo "$cmd" | awk -F'"' '{ st = index($2,".."); if (st) { print substr($2,0,st) } else { print $2 } }')")
             cd "$emupath"
             chmod a+x "$rompath"
             "$rompath" "$rompath" "$emupath"
