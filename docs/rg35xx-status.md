@@ -21,7 +21,20 @@
 - The FAT partition always logs "Volume was not properly unmounted": kernel 3.10 does not clear the
   dirty flag on remount read-only. Real corruption shows as "invalid cluster chain" errors.
 
+- **Arcade romsets**: MAME 2003-Plus wants the CPS2 sets with `.key` files and FB Alpha 2012 its
+  own 0.2.97.24 sets; clones need the parent zip next to them. The test card's MAME 2003-Plus set
+  runs `sf2`/`19xx` on FB Alpha, but not `sfa2` (no key) or the clone `ffightu` without `ffight`.
+- **Per-core RetroArch overrides** from Onion that pick Miyoo drivers (`audio_driver = "sdl"`,
+  `"oss"`, `sdl_dingux`) are stripped by `dist.sh`; other Miyoo-only keys
+  (`video_dingux_ipu_keep_aspect`) are ignored by RetroArch here.
+
 ## Fixed, for the record
+
+- Arcade (2026-10-30): MAME 2003-Plus, FB Alpha 2012 CPS-1, CPS-2 and Neo Geo built and on the card.
+  Unthrottled at 1200 MHz: Final Fight (MAME) 116 fps, Street Fighter II (CPS-1) 160, 19XX (CPS-2)
+  198, Metal Slug (Neo Geo) 185. cpuclock: CPS-1 840 (sf2 120 fps), CPS-2 1008 (only 19XX measured,
+  147 at 840), Neo Geo 840 (Metal Slug 2 122 fps), MAME 1200 (default: hundreds of drivers). The game
+  lists show arcade titles and hide the BIOS; the MAME tutorial video prompt is skipped (no ffplay).
 
 - mGBA: the libretro fork has no `Makefile.libretro`; `cores.sh` builds it with CMake
   (`-DLIBMGBA_ONLY=ON -DBUILD_LIBRETRO=ON`, Buildroot's `toolchainfile.cmake`). It runs GBA when

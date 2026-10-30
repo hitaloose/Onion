@@ -104,13 +104,18 @@ os nomes dos consoles somem na grade, como no Miyoo.
 10. **Navegação**: na tela inicial e nas grades ←/→ dão a volta no fim da lista (↑/↓ param na borda);
     o comportamento do Miyoo nesse ponto não foi visto. `SELECT` e `START` não fazem nada; `X` é
     do keymon (atalho do Tweaks, padrão Search, que não vai no cartão).
+11. **Logo no canto superior esquerdo**: é a imagem `miyoo-topbar.png` de cada tema (no Silky e no
+    ONION PS ela diz "onion"; no tema de fábrica da Miyoo dizia "MIYOO"). Não é texto do MainUI.
+12. **Ícones de cabeçalho extras** (fone de ouvido `headphone-icon.png`): não mostrados.
 13. **Y**: com `mainui_button_y = "glo"` (padrão do Onion, `config/keymap.json`) abre o menu de
     opções do jogo (GLO) como no Miyoo: o MainUI lança a entrada com `/tmp/launch_alt` e o runtime
     abre o `game_list_options.sh`; o MainUI grava `/tmp/state.json` (só o `type` da aba, uma chave
     por linha, que é o que o GLO lê). Sem essa opção, Y marca/desmarca favorito. Testado (2026-10-30).
-11. **Logo no canto superior esquerdo**: é a imagem `miyoo-topbar.png` de cada tema (no Silky e no
-    ONION PS ela diz "onion"; no tema de fábrica da Miyoo dizia "MIYOO"). Não é texto do MainUI.
-12. **Ícones de cabeçalho extras** (fone de ouvido `headphone-icon.png`): não mostrados.
+14. **Nomes de arcade** (`"shortname": 1`): o Miyoo traduz pela `libgamename`, que lê
+    `BIOS/arcade_lists/arcade-rom-names.txt` (ordenado, `rom "Título"`); o MainUI lê o mesmo
+    arquivo (busca binária) e o `dist.sh` copia só essa pasta do `static/dist/BIOS`. Com
+    `"hidebios": 1` some `neogeo` e todo título que diz BIOS (a lista exata do Miyoo não é conhecida).
+    Testado (2026-10-30).
 
 Novas capturas do Onion no Miyoo (vídeos, fóruns) podem fechar os itens 1, 2, 5, 6, 7 e 9.
 

@@ -19,6 +19,7 @@
 #define EMU_DIR "/mnt/SDCARD/Emu"
 #define APP_DIR "/mnt/SDCARD/App"
 #define RAPP_DIR "/mnt/SDCARD/RApp"
+#define ARCADE_NAMES_PATH "/mnt/SDCARD/BIOS/arcade_lists/arcade-rom-names.txt"
 #define MAX_SYSTEMS 128
 #define MAX_APPS 128
 #define MAX_RECENTS 50
@@ -35,6 +36,8 @@ typedef struct {
     char extlist[STR_MAX];  // bin|gba|zip|7z
     char icon[STR_MAX];     // absolute path, empty if none
     char iconsel[STR_MAX];  // icon when selected, absolute path
+    int shortname;          // 1: arcade ROM names, shown with their titles
+    int hidebios;           // 1: BIOS archives left out of the list
 } System;
 
 static System systems[MAX_SYSTEMS];
@@ -165,6 +168,8 @@ void library_loadSystems(const char *base_dir)
         json_getString(config, "imgpath", system->imgpath);
         json_getString(config, "gamelist", system->gamelist);
         json_getString(config, "extlist", system->extlist);
+        json_getInt(config, "shortname", &system->shortname);
+        json_getInt(config, "hidebios", &system->hidebios);
         _config_path(config, "icon", system->dir, system->icon);
         _config_path(config, "iconsel", system->dir, system->iconsel);
         cJSON_Delete(config);
@@ -253,6 +258,71 @@ static const char *_gamelist_lookup(const char *relative_file)
     return NULL;
 }
 
+// Arcade titles for "shortname" systems, from the list the Miyoo MainUI reads
+// through libgamename: one `rom "Title"` a line, sorted by ROM name
+typedef struct {
+    const char *rom;
+    const char *title;
+} ArcadeName;
+
+static char *_arcade_text = NULL;
+static ArcadeName *_arcade_names = NULL;
+static int _arcade_count = 0;
+
+static void _arcade_load(void)
+{
+    if (_arcade_text || !(_arcade_text = file_read(ARCADE_NAMES_PATH)))
+        return;
+
+    int lines = 1;
+    for (char *c = _arcade_text; *c; c++)
+        if (*c == '\n')
+            lines++;
+    _arcade_names = malloc(lines * sizeof(ArcadeName));
+    if (!_arcade_names)
+        return;
+
+    char *line = _arcade_text;
+    while (line && *line) {
+        char *next = strchr(line, '\n');
+        if (next)
+            *next++ = '\0';
+        char *title = line + strcspn(line, " \t");
+        if (*title) {
+            *title++ = '\0';
+            title += strspn(title, " \t\"");
+            char *end = title + strlen(title);
+            while (end > title && (end[-1] == '\r' || end[-1] == '"'))
+                *--end = '\0';
+            _arcade_names[_arcade_count].rom = line;
+            _arcade_names[_arcade_count].title = title;
+            _arcade_count++;
+        }
+        line = next;
+    }
+}
+
+static int _arcade_compare(const void *key, const void *entry)
+{
+    return strcmp((const char *)key, ((const ArcadeName *)entry)->rom);
+}
+
+static const char *_arcade_title(const char *rom)
+{
+    ArcadeName *found = _arcade_count > 0
+                            ? bsearch(rom, _arcade_names, _arcade_count,
+                                      sizeof(ArcadeName), _arcade_compare)
+                            : NULL;
+    return found ? found->title : NULL;
+}
+
+// The Miyoo's own BIOS list is not known: Neo Geo and titles that say BIOS
+static bool _is_arcade_bios(const char *rom, const char *title)
+{
+    return strcmp(rom, "neogeo") == 0 ||
+           (title && (strstr(title, "BIOS") || strstr(title, "Bios")));
+}
+
 static void _strip_extension(char *name)
 {
     char *dot = strrchr(name, '.');
@@ -276,6 +346,8 @@ void library_fillRoms(Menu *menu)
 
     if (strlen(menu->folder) == 0)
         _gamelist_load(system);
+    if (system->shortname || system->hidebios)
+        _arcade_load();
 
     if (!(dp = opendir(folder)))
         return;
@@ -293,8 +365,16 @@ void library_fillRoms(Menu *menu)
         const char *name = _gamelist_lookup(relative);
         strncpy(label, name ? name : ep->d_name, STR_MAX - 1);
         label[STR_MAX - 1] = '\0';
-        if (!name && !is_dir)
+        if (!name && !is_dir) {
             _strip_extension(label);
+            if (system->shortname || system->hidebios) {
+                const char *title = _arcade_title(label);
+                if (system->hidebios && _is_arcade_bios(label, title))
+                    continue;
+                if (system->shortname && title)
+                    strncpy(label, title, STR_MAX - 1);
+            }
+        }
 
         menu_add(menu, is_dir ? ENTRY_FOLDER : ENTRY_ROM, label, relative, menu->system);
     }

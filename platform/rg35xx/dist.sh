@@ -38,6 +38,10 @@ Sega - 32X (PicoDrive)
 Sony - PlayStation (PCSX ReARMed)
 NEC - TurboGrafx-16 (Beetle PCE FAST)
 NEC - TurboGrafx CD (Beetle PCE FAST)
+Arcade (MAME 2003-Plus)
+Capcom - CPS1 (FB Alpha 2012 CPS-1)
+Capcom - CPS2 (FB Alpha 2012 CPS-2)
+SNK - Neo Geo (fbalpha2012 neogeo)
 "
 
 # Build
@@ -62,18 +66,29 @@ rm -rf "$OUT"
 mkdir -p "$OUT"
 rsync -a --exclude .gitkeep "$ROOT_DIR/static/build/" "$OUT/"
 rsync -a --exclude .gitkeep "$ROOT_DIR/static/configs/" "$OUT/"
+# Some per-core overrides pick Miyoo drivers (sdl/oss audio, sdl_dingux); the
+# RG35XX drivers come from res/rg35xx_retroarch.cfg
+find "$OUT/Saves/CurrentProfile/config" -name '*.cfg' -exec \
+    perl -ni -e 'print unless /^(audio|video|input|input_joypad)_driver\s*=/' {} +
 # RG35XX defaults on top (cpuclock.txt per core, in this CPU's MHz)
 rsync -a "$PLATFORM_DIR/configs/" "$OUT/"
 for app in $APPS; do
     rsync -a "$ROOT_DIR/static/packages/App/$app/" "$OUT/"
 done
 rsync -a "$ROOT_DIR/static/packages/App/Activity Tracker/" "$OUT/"
+# Arcade titles for the game lists (MainUI, "shortname" systems)
+mkdir -p "$OUT/BIOS"
+rsync -a "$ROOT_DIR/static/dist/BIOS/arcade_lists" "$OUT/BIOS/"
 echo "$EMU_PACKAGES" | while read -r package; do
     if [ -n "$package" ]; then
         rsync -a "$ROOT_DIR/static/packages/Emu/$package/" "$OUT/"
     fi
 done
 "$ROOT_DIR/static/packages/common/apply.sh" "$OUT/Emu" > /dev/null
+# The MAME 2003-Plus launcher offers a tutorial video on the first launch,
+# but there is no ffplay here: mark it as seen
+mkdir -p "$OUT/Saves/CurrentProfile/saves/MAME 2003-Plus"
+touch "$OUT/Saves/CurrentProfile/saves/MAME 2003-Plus/.mame2003plusTutorialDone"
 
 # Miyoo libpadsp routes OSS audio to audioserver; the RG35XX uses ALSA and has
 # no libpadsp, so the preload is dropped from the scripts (the C programs use

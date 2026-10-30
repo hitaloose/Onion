@@ -6,7 +6,8 @@
 set -e
 
 ROOT_DIR="$(cd "$(dirname "$0")/../../.." && pwd)"
-CORES="${*:-gambatte fceumm snes9x2005 mednafen_supafaust gpsp mgba picodrive genesis_plus_gx pcsx_rearmed mednafen_pce_fast}"
+CORES="${*:-gambatte fceumm snes9x2005 mednafen_supafaust gpsp mgba picodrive genesis_plus_gx pcsx_rearmed mednafen_pce_fast
+    mame2003_plus fbalpha2012_cps1 fbalpha2012_cps2 fbalpha2012_neogeo}"
 
 mkdir -p "$ROOT_DIR/cache/rg35xx/cores"
 
@@ -29,6 +30,10 @@ mkdir -p "$ROOT_DIR/cache/rg35xx/cores"
         pcsx_rearmed)      repo=pcsx_rearmed;          dir=.;  args='-f Makefile.libretro platform=unix ARCH=arm DYNAREC=ari64 HAVE_NEON=1 BUILTIN_GPU=neon' ;;
         mednafen_pce_fast) repo=beetle-pce-fast-libretro; dir=.; args='platform=unix' ;;
         mednafen_supafaust) repo=supafaust;          dir=.;  args='platform=unix' ;;
+        mame2003_plus)     repo=mame2003-plus-libretro; dir=.; args='platform=unix' ;;
+        fbalpha2012_cps1)  repo=fbalpha2012_cps1;       dir=.; args='-f makefile.libretro platform=unix' ;;
+        fbalpha2012_cps2)  repo=fbalpha2012_cps2;       dir=.; args='-f makefile.libretro platform=unix' ;;
+        fbalpha2012_neogeo) repo=fbalpha2012_neogeo;    dir=.; args='-f makefile.libretro platform=unix' ;;
         *) echo \"unknown core \$core\"; failed=\"\$failed \$core\"; continue ;;
         esac
         [ -d \$repo ] || git clone -q --depth 1 --recurse-submodules --shallow-submodules https://github.com/libretro/\$repo.git

@@ -19,7 +19,7 @@ está desativado). Fork independente, sem PR ao Onion: ver o `README.md`.
 - MainUI próprio (`src/mainUI/`) com as telas do Miyoo (tela inicial com abas, grade de Jogos e
   Expert, listas, Apps) desenhadas pelos arquivos dos temas do Onion (`docs/rg35xx-mainui.md`), GameSwitcher (overlay com captura da tela),
   keymon (volume, brilho, suspensão, MENU curto/longo/duplo), batmon, desligamento limpo.
-- RetroArch 1.22.2 + patches do Onion + patches RG35XX; 10 cores compilados; 15 sistemas.
+- RetroArch 1.22.2 + patches do Onion + patches RG35XX; 14 cores compilados; 19 sistemas (lista no `README.md`).
 - Performance (benchmark sem limite de FPS, CPU limitada a 1,2 GHz, com USB): SNES 84, GB 218,
   GBA 126, NES 131, MD 167, PCE 146 FPS.
 
@@ -141,7 +141,8 @@ Implantar com o aparelho rodando o Onion (ADB habilitado por `/misc/enableADB`):
    `cmd_to_run.sh` (dependia do prefixo). O GLO agora abre com Y (`docs/rg35xx-mainui.md`, item 13).
 6. Telas do MainUI ainda sem referência (capa na lista, Configurações do Miyoo, lista vazia, pop-ups):
    ver "O que falta" em `docs/rg35xx-mainui.md`.
-7. ~~mGBA~~ (2026-10-30, CMake no `cores.sh`, 1008 MHz), pacotes RApp no cartão (a aba Expert já existe), mais sistemas/cores, instalador (Fase 6),
+7. ~~mGBA~~ (2026-10-30, CMake no `cores.sh`, 1008 MHz), ~~arcade~~ (lote 3a, 2026-10-30), demais
+   sistemas e aba Expert (plano na seção 6c), instalador (Fase 6),
    HDMI, segundo cartão, Tweaks sem opções do Miyoo.
 
 ## 6. Plano da GPU (PowerVR SGX544MP1): próximo trabalho
@@ -243,12 +244,55 @@ Pendências de sistema, antes da G4 (N64/PSP). Lista completa na seção "Open i
   listas e Apps desenhados pelos arquivos do tema, conferidos contra capturas do Miyoo e testados com
   Silky, ONION PS e Analogue. Pendências em `docs/rg35xx-mainui.md`, "O que falta";
 
+## 6c. Cobertura de sistemas para a primeira release (plano de 2026-10-30)
+
+Fluxo por core: `cores.sh <core>` → pacote na lista `EMU_PACKAGES` (ou RApp) do `dist.sh` →
+`dist.sh` → `tools/sync.sh` (sem reboot) → `tools/bench.sh` em 1200 e em degraus menores →
+`cpuclock.txt` em `platform/rg35xx/configs/Saves/CurrentProfile/config/<library_name>/` (o nome é o
+`library_name` do core, ver no fonte) → teste no aparelho → commit. Regra do clock: o menor degrau
+(720, 840, 1008, 1104, 1200) com pelo menos 30% de folga sobre 60 FPS no jogo mais pesado medido;
+sem medida representativa, 1200 (sem arquivo).
+
+Feito: etapas 0 (`bench.sh`), 1 (libpadsp), 2 (mGBA + Super Game Boy) e 3a (arcade). A fazer, nesta
+ordem (decisão do usuário: até 3c para a release, o resto fica documentado):
+
+| Lote | Sistema (pacote Emu) | Core | Custo | Clock estimado |
+|---|---|---|---|---|
+| 3b | Neo Geo Pocket Color | mednafen_ngp (beetle-ngp-libretro) | baixo | 720 |
+| 3b | WonderSwan Color | mednafen_wswan (beetle-wswan-libretro) | baixo | 720 |
+| 3b | Atari 2600 / 7800 / 5200 / Lynx | stella2014, prosystem, a5200, handy | baixo | 720 / 720 / 720 / 840 |
+| 3b | SG-1000 | gearsystem | baixo (C++) | 720 |
+| 3c | PICO-8 | fake08 (C++17, `platform/libretro`) | médio | 1008 |
+| 3c | MSX / ColecoVision | bluemsx | baixo | 840 |
+| 3c | SuperGrafx | mednafen_supergrafx | baixo | 840 |
+
+Sem ROMs de teste em `~/Workdir/roms` para NGP, WonderSwan, Lynx, MSX e PICO-8: usar homebrew livre.
+
+**Aba Expert (etapa 4):** o `dist.sh` passa a copiar uma lista de pacotes RApp. Escolha aprovada:
+Genesis Plus GX (Genesis, MS, GG, Sega CD, Rom Hacks) e Snes9x 2005 (cores já compilados); Final
+Burn Neo, Nestopia, Gearboy (GB/GBC), TGB Dual, Snes9x 2002 / 2005 Plus / 2010, Beetle PCE, Mednafen
+Lynx, atari800 (800/5200), fMSX, VBA Next, Gearsystem; engines Lutro, PuzzleScript, LowRes NX, GME.
+
+**Depois da release (documentado, não feito):**
+- Lote 3d, todos baratos (makefile): Pokémon Mini (pokemini), Game & Watch (gw), Mega Duck
+  (sameduck), Supervision (potator), Vectrex (vecx), Odyssey2/Videopac (o2em), Intellivision
+  (freeintv), Channel F (freechaf), ZX Spectrum (fuse), Amstrad CPC (crocods); clock provável 720.
+- Pesados ou caros de compilar: Virtual Boy (mednafen_vb), Satellaview/Sufami Turbo (snes9x),
+  C64/VIC-20 (vice), Amiga (puae2021), DOS (dosbox_pure), Neo Geo CD (neocd), TIC-80 (CMake),
+  ScummVM. CPS3 fica de fora (pesado demais).
+- Expert, depois: 3DO, Jaguar, PC-FX, X68000, Amiga uae4arm, forks `km_*` (xtreme), EasyRPG, ChaiLove.
+- Fora do port enquanto forem binários do Miyoo: Drastic (DS), Ports, PICO-8 standalone, AdvanceMame,
+  GnGeo, PCSX standalone, ScummVM standalone, OpenBOR.
+- Random Game: precisa achar jogos sem os `_cache6.db` do MainUI do Miyoo (ver `rg35xx-status.md`).
+
 ## 7. Aparelho de teste (2026-10-30)
 
 - Cartão de 128 GB com imagem do Garlic regravada (partição de ROMs 3,2 GB), Onion instalado por
   cima. `misc`: nosso `uImage`, `kernel.dtb`, `dmenu.bin`, `ramdisk.img` e `modules/{atc260x_cap_gauge,
   drm,pvrsrvkm}.ko`; `dmenu.bin.stock` = o do Garlic; `enableADB` presente. O `misc` original do
   Garlic inteiro está em `garlic-misc/` na partição de ROMs.
-- ROMs de teste: Tetris (GB), Super Bowling (SFC), Denki Blocks (GBA), de `~/Workdir/roms`.
+- ROMs de teste (de `~/Workdir/roms`): Tetris (GB e, com Tetris 2/Tetris Attack, em `SGB`), Super
+  Bowling e Yoshi's Island (SFC), Denki Blocks, F-Zero MV e Golden Sun (GBA), `ffightu`/`sfa2`
+  (ARCADE), `sf2`/`ffightu` (CPS1), `19xx`/`sfa2` (CPS2), `mslug`/`mslug2`/`neogeo` (NEOGEO).
 - `.tmp_update/config/.logging` ligado; decisões do ramdisk em `/mnt/data/bootmode.log`.
 - Para voltar ao Garlic: cartão no Mac, copiar `garlic-misc/*` de volta para o `misc`.
