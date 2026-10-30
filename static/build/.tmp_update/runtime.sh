@@ -68,7 +68,10 @@ main() {
         axp_status="0x$(axp 0 | cut -d':' -f2)"
         is_charging=$([ $(($axp_status & 0x4)) -eq 4 ] && echo 1 || echo 0)
     elif is_rg35xx; then
-        is_charging=$(cat /sys/class/power_supply/battery/charger_online)
+        # The boot ramdisk already showed the charger screen when a cable
+        # plug woke the device: reaching Onion means a reboot or the power
+        # button, so the system was asked for
+        is_charging=0
     fi
 
     # Show charging animation
