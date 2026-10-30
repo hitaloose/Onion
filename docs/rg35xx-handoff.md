@@ -164,18 +164,28 @@ Pendências de sistema, antes da G4 (N64/PSP). Lista completa na seção "Open i
 `docs/rg35xx-kernel.md`. As principais:
 - ~~sair do GameSwitcher para a lista de jogos às vezes desliga o console~~: era o 0% da gauge no
   boot virando `/tmp/.lowBat` (commit 9b7f42d5). Falta confirmar em bateria depois de um reboot;
-- reboot (`devchroot.sh reboot`) desliga o console; com USB conectado ele fica na tela de carga até
-  tirar o cabo;
-- ADB some depois do boot (voltar com `adb kill-server` ou replugando o cabo);
+- ~~reboot (`devchroot.sh reboot`) desliga o console / fica na tela de carga com o cabo~~: a u-boot
+  manda todo boot com cabo para o modo carregador (o reset do PMIC apaga `DIS_MCHRG`); o ramdisk
+  próprio (`platform/rg35xx/ramdisk/`) lê os flags de wakeup que o kernel loga e só fica no
+  carregador se o cabo acordou o console. Testado (2026-10-30), detalhes em `docs/rg35xx-kernel.md`,
+  seção "Boot ramdisk";
+- ~~tela de carga piscando~~: o driver de carga desligava a carga quando a porta USB caía abaixo
+  de 4,3 V; `kernel/patches/0004` usa 3,8 V como o kernel do Garlic. Na tela de carga só o power
+  atua (toque acende, segurar liga);
+- estalos baixos no alto-falante (vistos com a carga ligando e desligando; conferir se sumiram);
+- ADB some depois do boot (voltar com `adb kill-server` ou replugando o cabo); talvez fosse a
+  carga oscilando (conferir com o `0004`);
 - texto "android" na tela durante o boot;
 - fone de ouvido não testado; FAT com `errors=remount-ro`;
-- ramdisk, bootloaders e `uenv.txt` ainda são do Garlic (impede release público).
+- base do ramdisk (`init`, `/charger`), bootloaders e `uenv.txt` ainda são do Garlic (impede
+  release público).
 
-## 7. Aparelho de teste (estado no fim desta sessão)
+## 7. Aparelho de teste (2026-10-30)
 
-- Cartão com imagem do Garlic regravada (partição de ROMs só 3,2 GB), Onion instalado por cima,
-  `misc/dmenu.bin` = o nosso, `misc/dmenu.bin.stock` = o do Garlic, `misc/enableADB` presente.
-- ROMs de teste em `Roms/{GB,GBC,GBA,FC,SFC,MD,PCE,GG}` (o de GG e dois `.7z` em Downloads são
-  páginas HTML, downloads falhos). BIOS do PS1 em `BIOS/`.
-- `.tmp_update/config/.logging` ligado (log em `.tmp_update/logs/runtime.log`).
-- Para voltar ao Garlic: no `misc`, apagar `dmenu.bin` e renomear `dmenu.bin.stock` para `dmenu.bin`.
+- Cartão de 128 GB com imagem do Garlic regravada (partição de ROMs 3,2 GB), Onion instalado por
+  cima. `misc`: nosso `uImage`, `kernel.dtb`, `dmenu.bin`, `ramdisk.img` e `modules/{atc260x_cap_gauge,
+  drm,pvrsrvkm}.ko`; `dmenu.bin.stock` = o do Garlic; `enableADB` presente. O `misc` original do
+  Garlic inteiro está em `garlic-misc/` na partição de ROMs.
+- ROMs de teste: Tetris (GB), Super Bowling (SFC), Denki Blocks (GBA), de `~/Workdir/roms`.
+- `.tmp_update/config/.logging` ligado; decisões do ramdisk em `/mnt/data/bootmode.log`.
+- Para voltar ao Garlic: cartão no Mac, copiar `garlic-misc/*` de volta para o `misc`.

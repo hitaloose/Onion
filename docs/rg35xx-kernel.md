@@ -17,7 +17,7 @@ Output in `cache/rg35xx/kernel/`, laid out like the `misc` partition: `uImage`, 
 |---|---|
 | `platform/rg35xx/kernel/toolchain/Dockerfile` | Ubuntu 14.04 amd64 + GCC 4.7.3 Linaro (runs under emulation on Apple Silicon) |
 | `platform/rg35xx/kernel/build.sh` | Clones the source into the `rg35xx-kernel` volume, applies patches, builds, compiles the DTS |
-| `platform/rg35xx/kernel/patches/` | `0001` xhci-trace include path (3.12 fix), `0002` Kconfig/Makefile for the gamepad, `0003` CPU frequency table |
+| `platform/rg35xx/kernel/patches/` | `0001` xhci-trace include path (3.12 fix), `0002` Kconfig/Makefile for the gamepad, `0003` CPU frequency table, `0004` charger input threshold |
 | `platform/rg35xx/kernel/drivers/rg35xx-gamepad.c` | Gamepad driver, copied into `drivers/input/joystick/` |
 | `platform/rg35xx/kernel/rg35xx.config` | Changes merged over `rg35xx_atm7039_defconfig` |
 | `platform/rg35xx/kernel/dts/` | `gs705a.dtsi` (stock board), `rg35xx.dts` (+ gamepad), battery variants |
@@ -165,31 +165,78 @@ triangle) runs smoothly, at about 789 fps (no vsync wait), `GL renderer: PowerVR
   (an appended line does not override an earlier one in the same file), and Onion's keymon
   SIGSTOPs RetroArch when the screen times out (stop keymon during long adb benchmarks).
 
-## Still from Garlic
+## Charger input threshold (`patches/0004`)
 
-`misc/ramdisk.img` (Garlic build, Dec 2022), `bootloader.img`, `u-boot-dtb.img`, `uenv.txt` and the
-boot images come from the Garlic card image. Our kernel boots with that ramdisk: its `init.rc` mounts
-`/system` and `/misc`, insmods `/misc/modules/{gpio_keys_polled,atc260x_cap_gauge}.ko` and runs
-`loadapp.sh` → `dmenu.bin`. A release also needs its own ramdisk, or proof that these files are the
-stock Anbernic ones.
+The RG35XX is DCIN only (`support_adaptor_type = 1`): any cable counts as a wall adapter, charged at
+1000 mA (backlight on) or 1200 mA (off). The driver calls the adapter unplugged when `WALLV` drops
+below `wall_v_thresh`, 4300 mV in this tree without an external DC-DC (`ext_dcdc_exist = 0`). A Mac
+USB port sags to about 4.28 V at 660 mA, so the charger switched itself off and on every few seconds:
+Mains online/offline uevents, the charger screen lighting up on each "device plugged in",
+`battery/charger_online` flickering. The Garlic kernel's driver is a newer Anbernic version (battery
+temperature control, more LED pins; no public source found) whose probe sets 3800 mV for
+`ext_dcdc_exist = 0` (disassembled through its `/proc/kallsyms`); on the same port it charges steadily
+at about 800 mA with 4.18 V in. The patch uses 3800 mV. Tested: 630 mA at 4.28 V with no drop, the
+charger screen animates once and stays dark, and a 256 MB `adb push` while charging went through
+(it failed repeatedly before; USB on a sagging port is the likely cause of the ADB drops too).
+
+On the charger screen only the power key acts (short press: screen on; long press: boot): the
+gamepad's `BTN_*` codes reach `/charger` but it ignores them.
+
+## Boot ramdisk (`platform/rg35xx/ramdisk/`)
+
+`platform/rg35xx/ramdisk/build.sh <stock ramdisk.img>` takes the stock `misc/ramdisk.img` (Garlic
+card image, Dec 2022 build; a U-Boot legacy image, type ramdisk, uncompressed newc cpio, load
+`0x02000000`), puts our `init.rc` and `bootmode.sh` over it and writes `cache/rg35xx/ramdisk.img`.
+The stock `init.rc` mounts `/system` and `/misc`, insmods `/misc/modules/{gpio_keys_polled,
+atc260x_cap_gauge}.ko` and runs `loadapp.sh` → `dmenu.bin`; `init`, `/charger` and the scripts are
+still the stock binaries.
+
+**Reboot and charger mode.** With a cable plugged in, U-Boot's `check_power()` passes
+`androidboot.mode=charger` unless the pstore flag `DIS_MCHRG` is set, and init then runs only `on
+early-init` and `on charger` (no `class core`, so no `loadapp.sh`). The kernel sets `DIS_MCHRG` (bit 0
+of `UV_INT_EN`, reg 0x37) before rebooting through `SYS_CTL0` bit 10, but that PMIC reset clears the
+register (written by hand and reset: still the charger), so every reboot with a cable, and the
+`/charger` power-key reboot, ended on the charger screen. The PMIC does keep what woke it, and the
+kernel logs it at boot (`atc260x-pm: translated wakeup falgs: 0x...`, `OWL_PMIC_WAKEUP_SRC_*`):
+
+| Boot | Flags |
+|---|---|
+| Power button, cable or not | `0x100` (ONOFF_LONG) |
+| Cable plugged into the powered-off device | `0x200` (WALL_IN) |
+| Reboot (`reboot -f`), cable or not | `0x0` |
+
+`on charger` starts `bootmode.sh`, which reads that line and sets `sys.onion.boot`: `charger` only
+when WALL_IN or VBUS_IN is set (or the line is missing), which runs the stock charger actions;
+`system` otherwise, which runs `trigger early-boot` + `trigger boot`, the normal boot. Each decision
+is appended to `/mnt/data/bootmode.log`. While `/mnt/data/.chargerlog` exists, charger mode also
+mirrors the kernel log (where `/charger` writes) to `/mnt/data/charger-kmsg.log`, since there is no
+ADB in that mode. Onion's own charging screen at boot (`chargingState` in
+`runtime.sh`) is skipped on the RG35XX for the same reason. Tested: reboot with and without cable,
+power button and cable plug while off, power key on the charger screen.
+
+A U-Boot built from source (to check the wakeup flags there) was tried first and abandoned: the
+Actions SDK tree has no board device tree with a `/pmu` node and its defconfig lacks `run`/hush, and
+without a serial console two flashes failed blind (work parked in `~/Development/u-boot_s500-rg35xx`,
+backups in `~/rg35xx-backup/`).
+
+**Still from Garlic**: the ramdisk base, `bootloader.img`, `u-boot-dtb.img`, `uenv.txt` and the boot
+images. A release needs these replaced, or proof that they are the stock Anbernic files.
 
 ## Installing
 
 `misc` is only 10 MB (3.5 MB free), so two `uImage` do not fit. The Garlic kernel files are backed
 up in `garlic-misc/` on the roms partition of the test card (and in
 `RG35XX-CopyPasteOnTopOfStock.7z/misc/` on the Mac). `misc/modules/` holds only our
-`atc260x_cap_gauge.ko`.
+`atc260x_cap_gauge.ko`, `drm.ko` and `pvrsrvkm.ko`; `dmenu.bin.stock` is Garlic's.
 
 Over ADB: `adb push` the file to `/mnt/mmc`, then `mount -o remount,rw /misc`, `busybox cp` over the
-old one (U-Boot is the only reader of `uImage`/`kernel.dtb`), `sync`, `mount -o remount,ro /misc`,
+old one (U-Boot is the only reader of `uImage`/`kernel.dtb`/`ramdisk.img`), `sync`, `mount -o remount,ro /misc`,
 and compare `md5sum`. Rollback: card in the Mac, copy `garlic-misc/*` back over `misc/`.
 
 ## Open issues
 
-- **Reboot powers off** (`devchroot.sh reboot`, i.e. `reboot -f`): only the first one came back. With
-  USB connected the device then shows the charging screen (Garlic's or Onion's) and only powers on
-  after unplugging. `owl_pm_restart()` asks the PMIC for `OWL_PMIC_REBOOT_TGT_SYS`.
-- **ADB is slow to appear after boot** and sometimes drops; restarting the adb server on the Mac
+- **ADB is slow to appear after boot** and sometimes drops (possibly the charger cycling, fixed by
+  `patches/0004`; recheck); restarting the adb server on the Mac
   (`adb kill-server`) until it shows up has worked, and so has unplugging and replugging the cable. The USB monitor logs "set adaptor mode" when the
   host does not enumerate in time.
 - **"android" text on screen during boot**: init's console output on fbcon (`FRAMEBUFFER_CONSOLE=y`).
@@ -203,5 +250,9 @@ and compare `md5sum`. Rollback: card in the Mac, copy `garlic-misc/*` back over 
   lowBat` + `shutdown`, which is why no log survived. keymon only arms it from a real reading now,
   `runtime.sh` clears it at boot and logs a shutdown (`:: Shutdown requested`), so a recurrence
   leaves a trace. To be confirmed on battery power after the next reboot.
-- **Unplugging USB once rebooted the device.**
-- `misc/ramdisk.img`, the bootloaders and `uenv.txt` are still Garlic's (see above).
+- **Unplugging USB once rebooted the device**: probably Onion's `chargingState`, which powers off when
+  the cable goes and is no longer started at boot.
+- **Faint clicks from the speaker** now and then, also on the charger screen (so not RetroArch or
+  Onion's audio). Seen while the charger was switching on and off (see `patches/0004`); check whether
+  they are gone.
+- The ramdisk base, the bootloaders and `uenv.txt` are still Garlic's (see "Boot ramdisk").
