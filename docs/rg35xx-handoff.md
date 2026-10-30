@@ -91,13 +91,15 @@ Implantar com o aparelho rodando o Onion (ADB habilitado por `/misc/enableADB`):
   320x240 e o hardware amplia 2x. O RetroArch confere o modo do fb a cada quadro (patch 0002).
 - RetroArch genérico lia `~/.config/retroarch`: patches 0001/0003 usam `$HOME/.retroarch`.
 - Binds do `retroarch.cfg` do Onion usam a numeração do Miyoo; `rg35xx_retroarch.cfg` traduz.
-- `keymon`: o "segurar MENU" funciona (~0,7 s). `quietMainUI` (injeta L1) foi desligado no RG35XX.
+- `keymon`: o "segurar MENU" funciona (~0,7 s), mas sair do jogo direto (sem o GameSwitcher) exige
+  segurar e soltar MENU no momento certo, com ou sem cabo (pendente, ver 6b). `quietMainUI` (injeta
+  L1) foi desligado no RG35XX.
 - `libpng`: headers do Onion são 1.2; no RG35XX `png/png.h` aponta para o 1.6 do sysroot.
 
 ## 5. Pendências (ver também `docs/rg35xx-status.md`)
 
 1. Kernel próprio / independência do kernel do Garlic (resolvido pelo plano G1 abaixo).
-2. Bateria mostra 0% nos primeiros ~10 s no MainUI.
+2. Bateria mostra 0% nos primeiros ~7-10 s depois de ligar (pendente, ver 6b).
 3. 60 Hz (painel em 56,4 Hz; pixclock ~47026 ps daria 60 Hz) e vsync (`OWLFB_WAITFORVSYNC`;
    referência open source: MinUI do shauninman, plataforma rg35xx).
 4. Clock por sistema e `target_loads` do `interactive` (bateria), vídeo em thread para PS1.
@@ -163,7 +165,7 @@ Fases:
 Pendências de sistema, antes da G4 (N64/PSP). Lista completa na seção "Open issues" de
 `docs/rg35xx-kernel.md`. As principais:
 - ~~sair do GameSwitcher para a lista de jogos às vezes desliga o console~~: era o 0% da gauge no
-  boot virando `/tmp/.lowBat` (commit 9b7f42d5). Falta confirmar em bateria depois de um reboot;
+  boot virando `/tmp/.lowBat` (commit 9b7f42d5). Confirmado na bateria em 2026-10-30;
 - ~~reboot (`devchroot.sh reboot`) desliga o console / fica na tela de carga com o cabo~~: a u-boot
   manda todo boot com cabo para o modo carregador (o reset do PMIC apaga `DIS_MCHRG`); o ramdisk
   próprio (`platform/rg35xx/ramdisk/`) lê os flags de wakeup que o kernel loga e só fica no
@@ -172,9 +174,12 @@ Pendências de sistema, antes da G4 (N64/PSP). Lista completa na seção "Open i
 - ~~tela de carga piscando~~: o driver de carga desligava a carga quando a porta USB caía abaixo
   de 4,3 V; `kernel/patches/0004` usa 3,8 V como o kernel do Garlic. Na tela de carga só o power
   atua (toque acende, segurar liga);
-- estalos baixos no alto-falante (vistos com a carga ligando e desligando; conferir se sumiram);
-- ADB some depois do boot (voltar com `adb kill-server` ou replugando o cabo); talvez fosse a
-  carga oscilando (conferir com o `0004`);
+- ~~estalos baixos no alto-falante~~: sumiram com o `0004` (vinham da carga ligando e desligando);
+- sair do jogo sem o GameSwitcher: hoje é preciso segurar e soltar MENU no momento certo (com ou
+  sem cabo); deveria ser só segurar;
+- nível da bateria leva ~7 s para aparecer depois de ligar (a gauge reporta 0% até a primeira
+  medida);
+- ~~ADB some depois do boot~~: estável desde o `0004` (era a carga oscilando na porta USB);
 - texto "android" na tela durante o boot;
 - fone de ouvido não testado; FAT com `errors=remount-ro`;
 - base do ramdisk (`init`, `/charger`), bootloaders e `uenv.txt` ainda são do Garlic (impede

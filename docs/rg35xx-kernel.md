@@ -235,8 +235,8 @@ and compare `md5sum`. Rollback: card in the Mac, copy `garlic-misc/*` back over 
 
 ## Open issues
 
-- **ADB is slow to appear after boot** and sometimes drops (possibly the charger cycling, fixed by
-  `patches/0004`; recheck); restarting the adb server on the Mac
+- **ADB is slow to appear after boot** and used to drop: the drops stopped with `patches/0004` (the
+  charger cycling on a USB port); restarting the adb server on the Mac
   (`adb kill-server`) until it shows up has worked, and so has unplugging and replugging the cable. The USB monitor logs "set adaptor mode" when the
   host does not enumerate in time.
 - **"android" text on screen during boot**: init's console output on fbcon (`FRAMEBUFFER_CONSOLE=y`).
@@ -249,10 +249,7 @@ and compare `md5sum`. Rollback: card in the Mac, copy `garlic-misc/*` back over 
   flag: a 0% gauge reading at boot armed `/tmp/.lowBat` and the first game exit ran `bootScreen
   lowBat` + `shutdown`, which is why no log survived. keymon only arms it from a real reading now,
   `runtime.sh` clears it at boot and logs a shutdown (`:: Shutdown requested`), so a recurrence
-  leaves a trace. To be confirmed on battery power after the next reboot.
+  leaves a trace. Confirmed on battery power after a reboot (2026-10-30).
 - **Unplugging USB once rebooted the device**: probably Onion's `chargingState`, which powers off when
   the cable goes and is no longer started at boot.
-- **Faint clicks from the speaker** now and then, also on the charger screen (so not RetroArch or
-  Onion's audio). Seen while the charger was switching on and off (see `patches/0004`); check whether
-  they are gone.
 - The ramdisk base, the bootloaders and `uenv.txt` are still Garlic's (see "Boot ramdisk").
