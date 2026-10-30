@@ -15,6 +15,9 @@ O que temos:
 
 | Fonte | O que dá |
 |---|---|
+| `preview.png` de cada tema no OnionUI/Themes (480x360, captura da tela inicial no Miyoo, reduzida a 3/4) | posição das abas e das bolinhas com ícones de alturas diferentes (Analogue, Blueprint, ONION PS) |
+| Tema Blueprint (Aemiii91), indicado no guia de temas como molde: cada imagem do skin tem o nome escrito e a borda desenhada | onde cada imagem fica na tela inicial |
+| Guia de scraping do Onion (onionui.github.io/docs/advanced/scraping) | capas em `Roms/<sistema>/Imgs`, PNG de no máximo 250x360 |
 | GIF de divulgação do Onion V4 (tela 320x240 dentro do GIF, recortada e ampliada para 640x480) | tela inicial com o tema Silky, medida pixel a pixel; Theme Switcher mostrando a tela inicial do ONION PS com 6 abas |
 | Fotos de um review em vídeo (perspectiva corrigida) | aba Jogos (grade 4x2, número da página "1/2") e lista de ROMs (6 linhas, "111/205") |
 | `src/common/system/state.h` do Onion (`write_mainui_state`) | itens por página em cada aba do MainUI do Miyoo: Recentes/Favoritos 6, Jogos 8, Expert 9, Apps 4; tela inicial com janela de 4 |
@@ -33,7 +36,7 @@ Legenda: **medido** = posição conferida contra captura do Miyoo; **confirmado*
 |---|---|---|
 | Cabeçalho (todas) | `bg-title.png` 640x60; `miyoo-topbar.png` (logo, só na tela inicial); bateria `power-{0,20,50,80}%-icon.png`, `power-full-icon.png`, `ic-power-charge-100%.png`, texto `batteryPercentage`; título na fonte `title` | medido (renderizadores do Onion, `theme/render/header.h`) |
 | Rodapé (todas) | `tips-bar-bg.png` 640x60; `icon-A-54.png`, `icon-B-54.png`, texto na fonte `hint`; contador nas cores `currentpage`/`total` | medido |
-| Tela inicial | `background.png`; `ic-{recent,favorite,game,retroarch,app,setting}-{n,f}.png` 156x328; rótulo da aba na fonte `grid.font` tamanho `grid1x4`, cores `grid.color` / `grid.selectedcolor`; `dot-a.png` / `dot-n.png` | medido |
+| Tela inicial | `background.png`; `ic-{recent,favorite,game,retroarch,app,setting}-{n,f}.png` 156x328 ou 156x278 (depende do tema); rótulo da aba na fonte `grid.font` tamanho `grid1x4`, cores `grid.color` / `grid.selectedcolor`; `dot-a.png` / `dot-n.png` | medido |
 | Jogos | `bg-game-item-{n,f}.png` 154x170 em grade 4x2; ícone `icon`/`iconsel` do `Emu/*/config.json` (120x130 nos pacotes de ícones); nome do sistema na fonte `grid.font` | confirmado |
 | Lista de ROMs, Recentes, Favoritos | `bg-list-s.png` 640x60 (linha selecionada), `div-line-h.png`, fonte `list`; capa em `preview-bg.png` 256x364 à direita | confirmado (sem capa); capa deduzida |
 | Apps | `bg-list-l.png` 640x94, 4 por página; ícone 74x74 do `App/*/config.json`; `description` na segunda linha | 4 por página confirmado; desenho deduzido (é o mesmo do Tweaks) |
@@ -51,10 +54,12 @@ Coordenadas em pixels de 640x480 (multiplicadas por `g_scale`, que é 1 no RG35X
 
 - **Tela inicial** (medida contra o Silky do GIF; diferença ≤ 2 px): abas Recentes (se
   `.showRecents`), Favoritos, Jogos, Expert (se `.showExpert`), Apps, Configurações, as mesmas opções
-  do Tweaks. Blocos em `x = 10 + 154·i`, `y = 66`, janela de 4 que acompanha a seleção. Rótulo
+  do Tweaks. Blocos em `x = 10 + 154·i`, centralizados na vertical em `y = 230` (o Silky tem 328 de
+  altura e fica em `y = 66`; Analogue, Blueprint e ONION PS têm 278 e ficam em `y = 91`), janela de 4
+  que acompanha a seleção. Rótulo
   centralizado no bloco, centro em `y = 285`, com o texto do arquivo de idioma (o `hideLabels.icons`
-  do Onion já apaga esses textos). Uma bolinha por aba, passo de 29 px, começando em
-  `320 − n·29/2`, `y = 389`. ←/→ trocam de aba, A abre, Configurações abre o Tweaks.
+  do Onion já apaga esses textos). Uma bolinha por aba, `y = 389`, passo igual à largura
+  do `dot-a.png` + 5 px (29 no Silky, 18 no Analogue), começando em `320 − n·passo/2`. ←/→ trocam de aba, A abre, Configurações abre o Tweaks.
 - **Jogos**: grade 4x2 a partir de `(12, 70)`, células de 154x170, ícone com centro a 70 px do topo da
   célula, nome com centro a 150 px, fonte `grid3x4`. Setas andam na grade, L1/R1 trocam de página;
   rodapé com página/total. Sistema sem ícone mostra só o nome no centro da célula.
@@ -68,7 +73,8 @@ Coordenadas em pixels de 640x480 (multiplicadas por `g_scale`, que é 1 no RG35X
   recursos comuns do Onion não cobrem (`ic-*`, `bg-game-item-*`, `bg-ra-list-item`) são carregadas
   uma vez.
 
-Testado no aparelho (2026-10-30) com os temas Silky (padrão), ONION PS Purple Grey e Analogue.
+Testado no aparelho (2026-10-30) com os temas Silky (padrão), ONION PS Purple Grey e Analogue; a tela
+inicial do Analogue e do ONION PS confere com o `preview.png` dos temas.
 No ONION PS os rótulos das abas vêm desenhados nas próprias imagens `ic-*.png` e a `grid.font` é vazia:
 os nomes dos consoles somem na grade, como no Miyoo.
 
@@ -76,7 +82,8 @@ os nomes dos consoles somem na grade, como no Miyoo.
 
 1. **Lista com capa**: posição da capa e largura da lista quando há imagem não conferidas (usa o
    `theme_renderList` do Onion: `preview-bg.png` encostado à direita, imagem centralizada em `y = 240`).
-   Precisa de uma captura do Miyoo com capa.
+   O guia de scraping do Onion só dá o tamanho máximo da capa (250x360) e não mostra a lista. Precisa
+   de uma captura do Miyoo com capa.
 2. **Configurações do Miyoo**: a aba abre o Tweaks. A tela original (brilho, idioma, tema, informações,
    teclas, restaurar, desligar, com os ícones `icon-*-48.png`) não foi vista; o volume e o brilho já
    têm atalhos no keymon. Decidir se vale fazer uma tela própria com esses ícones.
@@ -95,7 +102,9 @@ os nomes dos consoles somem na grade, como no Miyoo.
    (`grid3x4`) é suposição.
 10. **Navegação**: na tela inicial e nas grades ←/→ dão a volta no fim da lista (↑/↓ param na borda);
     o comportamento do Miyoo nesse ponto não foi visto. `X`, `SELECT` e `START` não fazem nada.
-11. **Ícones de cabeçalho extras** (fone de ouvido `headphone-icon.png`): não mostrados.
+11. **Logo no canto superior esquerdo**: é a imagem `miyoo-topbar.png` de cada tema (no Silky e no
+    ONION PS ela diz "onion"; no tema de fábrica da Miyoo dizia "MIYOO"). Não é texto do MainUI.
+12. **Ícones de cabeçalho extras** (fone de ouvido `headphone-icon.png`): não mostrados.
 
 Novas capturas do Onion no Miyoo (vídeos, fóruns) podem fechar os itens 1, 2, 5, 6, 7 e 9.
 

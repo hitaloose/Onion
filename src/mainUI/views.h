@@ -17,15 +17,17 @@
 #include "./library.h"
 #include "./menu.h"
 
-// Main screen: four ic-<tab>-{n,f}.png tiles (156x328) and one dot per tab
+// Main screen: four ic-<tab>-{n,f}.png tiles and one dot per tab. Tiles are
+// 156x328 or 156x278 depending on the theme; the Miyoo centers them on y = 230
+// (328 at y = 66 in Silky, 278 at y = 91 in the Blueprint preview)
 #define MAIN_VISIBLE 4
 #define MAIN_TILE_X 10
-#define MAIN_TILE_Y 66
+#define MAIN_TILE_CY 230
 #define MAIN_TILE_STEP 154
 #define MAIN_TILE_W 156
 #define MAIN_LABEL_Y 285
 #define MAIN_DOT_Y 389
-#define MAIN_DOT_STEP 29
+#define MAIN_DOT_GAP 5 // dots are dot-a.png wide plus this gap (24 + 5 in Silky, 13 + 5 in Analogue)
 
 // Games tab: 4x2 grid of bg-game-item-{n,f}.png (154x170)
 #define GAMES_COLS 4
@@ -238,7 +240,9 @@ void view_renderMain(SDL_Surface *screen, Menu *menu, int battery_percentage)
         MenuKind tab = (MenuKind)menu->entries[i].index;
         int x = S(MAIN_TILE_X + slot * MAIN_TILE_STEP);
 
-        _blit(_tab_icon(tab, active), screen, x, S(MAIN_TILE_Y));
+        SDL_Surface *icon = _tab_icon(tab, active);
+        if (icon)
+            _blit(icon, screen, x, S(MAIN_TILE_CY) - icon->h / 2);
         _render_text(screen, font, _tab_label(tab),
                      active ? theme()->grid.selectedcolor : theme()->grid.color,
                      x + S(MAIN_TILE_W) / 2, S(MAIN_LABEL_Y), S(MAIN_TILE_STEP));
@@ -246,10 +250,11 @@ void view_renderMain(SDL_Surface *screen, Menu *menu, int battery_percentage)
 
     SDL_Surface *dot_active = resource_getSurface(DOT_ACTIVE),
                 *dot_neutral = resource_getSurface(DOT_NEUTRAL);
-    int dots_x = S(320) - menu->count * S(MAIN_DOT_STEP) / 2;
+    int dot_step = (dot_active ? dot_active->w : 0) + S(MAIN_DOT_GAP);
+    int dots_x = S(320) - menu->count * dot_step / 2;
     for (int i = 0; i < menu->count; i++)
         _blit(i == menu->active ? dot_active : dot_neutral, screen,
-              dots_x + i * S(MAIN_DOT_STEP), S(MAIN_DOT_Y));
+              dots_x + i * dot_step, S(MAIN_DOT_Y));
 
     _render_footer(screen, true);
     theme_renderHeaderBattery(screen, battery_percentage);

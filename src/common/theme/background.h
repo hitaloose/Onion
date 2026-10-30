@@ -14,6 +14,10 @@ void theme_backgroundLoad(void)
     char theme_path[STR_MAX];
     resources.background =
         rotate180(theme_loadImage(theme_getPath(theme_path), "background"));
+    // the background is opaque: copy it instead of alpha blending, which
+    // leaves 1/256 of the previous screen behind
+    if (resources.background)
+        SDL_SetAlpha(resources.background, 0, 0);
     resources._background_loaded = true;
 }
 
