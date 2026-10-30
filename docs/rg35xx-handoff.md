@@ -149,8 +149,8 @@ Peças verificadas (todas na org GitHub `rg35xx-cfw`):
 Fases:
 - **G1 — kernel próprio: feito e testado no aparelho (2026-10-26).** Detalhes, decisões e
   pendências em `docs/rg35xx-kernel.md`. `platform/rg35xx/kernel/build.sh` (GCC 4.7.3 do
-  Ubuntu 14.04) gera `uImage`, `kernel.dtb`, `dtbs/` e `modules/` em `cache/rg35xx/kernel/`. DTS =
-  `kernel.dtb` do Garlic decompilado + gamepad + alto-falante ativo em nível alto. Driver próprio
+  Ubuntu 14.04) gera `uImage`, `kernel.dtb` e `modules/` em `cache/rg35xx/kernel/`. DTS =
+  `kernel.dtb` stock decompilado + gamepad + alto-falante ativo em nível alto. Driver próprio
   `rg35xx-gamepad`. Tabela de CPU do Garlic (patch 0003). ADB exige `USB_G_ANDROID=y` e
   `USB_PLATFORM_LINUX` desligado. Volume pelo ALSA `DAC PA Volume`; framebuffer ARGB (o
   `display_fbColor()` lê o layout). Pendências: reboot às vezes desliga, ADB demora a aparecer,
@@ -205,8 +205,10 @@ Pendências de sistema, antes da G4 (N64/PSP). Lista completa na seção "Open i
 - ~~base do ramdisk (`init`, `/charger`), bootloaders e `uenv.txt` ainda são do Garlic~~: comparados
   com a imagem stock da Anbernic (`35XX-64GB230309EN.IMG`, 2023-03-09) em 2026-10-30, são os arquivos
   de fábrica (bootloader e U-Boot byte a byte, ramdisk com o mesmo conteúdo, `uenv.txt` e imagens de
-  carga idênticos). Do Garlic sobram só as tabelas de bateria do DTS (2600/2100/2800 mAh). Tabela
-  em `docs/rg35xx-kernel.md`, "Stock or Garlic?".
+  carga idênticos). Do Garlic sobravam só as tabelas de bateria do DTS: voltamos para a stock
+  (2100 mAh), testado (2026-10-30). Tabela em `docs/rg35xx-kernel.md`, "Stock or Garlic?";
+- piscada preta entre o logo da U-Boot e o do `init` no boot sem cabo (com cabo não pisca): não
+  investigado, deixado para depois;
 
 ## 7. Aparelho de teste (2026-10-30)
 

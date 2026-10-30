@@ -3,8 +3,8 @@
 # rg35xx-kernel-toolchain image: rg35xx-cfw/s500_kernel plus patches/,
 # drivers/, rg35xx.config and dts/ from this directory.
 # Usage (from the repo root): platform/rg35xx/kernel/build.sh [make targets]
-# Output: cache/rg35xx/kernel/{uImage,kernel.dtb,dtbs/<capacity>.dtb,modules/},
-#         laid out like the misc partition
+# Output: cache/rg35xx/kernel/{uImage,kernel.dtb,modules/}, laid out like the
+#         misc partition
 # The source tree lives in the rg35xx-kernel Docker volume (the kernel needs a
 # case-sensitive filesystem); the build log is /work/build.log in it.
 set -e
@@ -40,17 +40,14 @@ make -s olddefconfig
 make -j\$(nproc) LOADADDR=0x00008000 $TARGETS > /work/build.log 2>&1 || { grep -B2 -A8 -m5 'error' /work/build.log | tail -60; exit 1; }
 rm -rf /out/*
 cp arch/arm/boot/uImage /out/
-mkdir -p /out/dtbs /out/modules
+mkdir -p /out/modules
 # Padding leaves U-Boot room to add bootargs and memory to the tree, as the
 # stock kernel.dtb does
 dtc() { scripts/dtc/dtc -q -p 4096 -I dts -O dtb -i /kernel/dts -o \$2 /kernel/dts/\$1; }
 dtc rg35xx.dts /out/kernel.dtb
-cp /out/kernel.dtb /out/dtbs/2600mAh.dtb
-dtc rg35xx-2100mAh.dts /out/dtbs/2100mAh.dtb
-dtc rg35xx-2800mAh.dts /out/dtbs/2800mAh.dtb
 # Without debug symbols: misc has about 3 MB free
 for m in \$(find . -name '*.ko' -not -path './android/*'); do
     arm-linux-gnueabihf-strip --strip-debug -o /out/modules/\$(basename \$m) \$m
 done
 "
-ls -l "$OUT_DIR" "$OUT_DIR/dtbs"
+ls -l "$OUT_DIR"

@@ -11,7 +11,7 @@ platform/rg35xx/kernel/build.sh     # 1st time ~5 min (clone + full build), then
 ```
 
 Output in `cache/rg35xx/kernel/`, laid out like the `misc` partition: `uImage`, `kernel.dtb`,
-`dtbs/{2100,2600,2800}mAh.dtb`, `modules/*.ko`.
+`modules/*.ko`.
 
 | Path | Role |
 |---|---|
@@ -54,21 +54,24 @@ stay online, which is what `dmenu.bin` asks for with `plug_mask=0xF`; the write 
 
 ## Device tree
 
-The repo's `rg35xx_atm7039.dts` (Koriki) is **not used**. Compared with the Garlic `kernel.dtb`, it:
+The repo's `rg35xx_atm7039.dts` (Koriki) is **not used**. Compared with the stock `kernel.dtb`, it:
 - puts `vbus_otg_en_gpios` on GPIO 78, which the stock tree uses for `charger_led2_ctl` (stock: 25);
 - adds external PWM DC-DC regulators `vdd-core-dcdc`/`vdd-gpu-dcdc` that the stock tree does not have
   (a wrong PWM table would change the CPU/GPU voltage);
-- has a different 2100 mAh battery table (terminal voltage 3450 vs 3200 mV) and no 2600/2800 tables;
+- has a different 2100 mAh battery table;
 - drops `lcd_spics2_gpios` (GPIO 31) and `earphone_detect2_gpios`, and changes the LED settings;
 - enables the GPU (stock: `status = "disabled"`) and sets `pixclock` 47000 (60 Hz) instead of 50000.
 
-So `dts/gs705a.dtsi` is the Garlic `kernel.dtb` decompiled verbatim (the 2600 mAh variant). Its board
+So `dts/gs705a.dtsi` is the Anbernic stock `kernel.dtb` (card image `35XX-64GB230309EN`, 2100 mAh
+battery). It was first decompiled from Garlic's, whose only changes are a 2600 mAh battery table,
+`boot_cap_threshold` 0 and no `moto_pwm_gpio`; the battery part was put back to stock on 2026-10-30
+(Garlic's 2100/2800 mAh variants are gone with it). Its board
 name is still the Actions reference design ("Actions GS705A board"). `rg35xx.dts` adds `model` and the
-gamepad node, and changes one thing: `speaker_en_gpios` (GPIO 40) is active **high**. The stock tree
+gamepad node, the earphone GPIO (see "Earphone jack") and `boot_cap_threshold` 0 (stock 3: the gauge reads 0% until
+its first measurement), and `speaker_en_gpios` (GPIO 40) is active **high**. The stock tree
 flags it active low; the Garlic kernel ignores the flag, but this codec driver follows it and kept the
-speaker off (no sound, and RetroArch ran unthrottled because nothing blocked on audio). `rg35xx-{2100,2800}mAh.dts` replace only `capacity` and `ocv_soc_*`, taken from
-Garlic's `misc/dtbs/`. Decompiled again, our DTBs are identical to Garlic's except for those
-additions. They are padded (`dtc -p 4096`) as the stock one is, so U-Boot has room to add `bootargs`.
+speaker off (no sound, and RetroArch ran unthrottled because nothing blocked on audio). Decompiled
+again, our DTB is identical to the stock one except for those changes and the GPU node. It is padded (`dtc -p 4096`) as the stock one is, so U-Boot has room to add `bootargs`.
 
 The GPU and 60 Hz changes are left for later, one at a time (G2, and the 60 Hz item in the hand-off).
 
@@ -254,7 +257,7 @@ All three cards have the same GPT layout (MISC 10 MB at sector 16384, SYSTEM 512
 | U-Boot (raw at 0x300000; "U-Boot 2015.04 (Feb 25 2023 - 10:09:24)Actions-Semi") | stock, byte for byte |
 | `ramdisk.img` | stock: same 43 entries, modes and contents; only the image header and cpio dates differ |
 | `uenv.txt`, `{0..5}_charger_frame`, `charger_logo`, `battery_low`, `recovery_logo` (`.bmp.gz`) | stock, identical |
-| `kernel.dtb` | Garlic: the stock tree with a 2600 mAh battery (stock: 2100 mAh, other OCV table, `terminal_voltage` 3450 vs 3200 mV), `boot_cap_threshold` 3 → 0 and no `moto_pwm_gpio` |
+| `kernel.dtb` | Garlic: the stock tree with a 2600 mAh battery (stock: 2100 mAh, other OCV table, `terminal_voltage` 3450 vs 3200 mV), `boot_cap_threshold` 3 → 0 and no `moto_pwm_gpio`. Ours is back on the stock battery data |
 | `dtbs/`, `dmenu.bin`, `hdmi.bin`, `def_config.bin`, `boot_logo`, `uImage`, `modules/` | Garlic (`uImage` built by blackseraph, 2023-04-06) |
 
 The raw areas of `garlic.img` differ from stock only in the GPT and leftover FAT sectors in unused
@@ -263,8 +266,7 @@ package does), so U-Boot does not need them there. The stock `/system/dmenu/dmen
 `/misc/dmenu.bin` when it exists, otherwise the Anbernic launcher `/mnt/vendor/bin/dmenu.bin`: that is
 the hook both Garlic and this port use, so a stock card only needs our files in misc.
 
-So of the boot chain only the battery part of the device tree (`gs705a.dtsi`, and the
-`rg35xx-{2100,2800}mAh.dts` tables) is still Garlic's work; everything else is ours or stock.
+So nothing of Garlic's is left in the boot chain: the files are ours or stock.
 
 ## Installing
 
@@ -291,5 +293,5 @@ and compare `md5sum`. Rollback: card in the Mac, copy `garlic-misc/*` back over 
   leaves a trace. Confirmed on battery power after a reboot (2026-10-30).
 - **Unplugging USB once rebooted the device**: probably Onion's `chargingState`, which powers off when
   the cable goes and is no longer started at boot.
-- The battery tables of the device tree are Garlic's; the rest of the boot chain is stock or ours
-  (see "Boot ramdisk", "Stock or Garlic?").
+- **Black frame between U-Boot's logo and init's** when booting on battery (power key, no cable);
+  not with a cable. Not investigated yet (2026-10-30), possibly older than today's kernel.

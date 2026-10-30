@@ -1,6 +1,5 @@
 /*
- * Anbernic RG35XX (original), Onion kernel. Built as kernel.dtb (2600 mAh
- * battery); rg35xx-<capacity>.dts change only the battery table.
+ * Anbernic RG35XX (original), Onion kernel. Built as kernel.dtb.
  */
 /dts-v1/;
 
@@ -22,6 +21,12 @@
 				 * GPIO 28 never changes. Active low makes
 				 * link-owl.c report h2w = 2 with a plug in */
 				earphone_detect_gpios = <0x0c 0x51 0x01>;
+			};
+
+			atc260x-power {
+				/* Stock: 3 (%). The gauge reads 0% until its first
+				 * measurement a few seconds into the boot */
+				boot_cap_threshold = <0x00>;
 			};
 		};
 	};
