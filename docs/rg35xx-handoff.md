@@ -187,8 +187,11 @@ Pendências de sistema, antes da G4 (N64/PSP). Lista completa na seção "Open i
   (os cabeçalhos leem a gauge direto enquanto `percBat` não existe). Testado sem cabo (2026-10-30):
   96% gravado aos 5,5 s;
 - ~~ADB some depois do boot~~: estável desde o `0004` (era a carga oscilando na porta USB);
-- texto "android" na tela durante o boot;
-- fone de ouvido não testado; FAT com `errors=remount-ro`;
+- ~~texto "android" na tela durante o boot~~: o `init` escreve "A N D R O I D" no `tty0` quando
+  falta `/initlogo.rle`; o `ramdisk/build.sh` gera um preto. Testado (2026-10-30);
+- ~~FAT com `errors=remount-ro`~~: o `ramdisk/build.sh` põe `errors=continue` no mount do
+  `loadapp.sh` (o `fat_remount` do 3.10 ignora opções, só vale na montagem). Testado (2026-10-30);
+- fone de ouvido não testado;
 - base do ramdisk (`init`, `/charger`), bootloaders e `uenv.txt` ainda são do Garlic (impede
   release público).
 

@@ -22,6 +22,26 @@ dd if="$STOCK" of="$WORK/stock.cpio" bs=64 skip=1 2> /dev/null
 
 install -m 755 "$RAMDISK_DIR/init.rc" "$RAMDISK_DIR/bootmode.sh" "$WORK/root/"
 
+# The roms partition with errors=continue like Garlic: the kernel default,
+# remount-ro, leaves the card read-only until reboot after any FAT error, and
+# a remount does not change it (fat_remount ignores the options)
+sed -i.orig 's|-o rw,utf8,noatime,nodiratime /dev/block/mmcblk0p4|-o rw,utf8,noatime,nodiratime,errors=continue /dev/block/mmcblk0p4|' \
+    "$WORK/root/loadapp.sh"
+rm "$WORK/root/loadapp.sh.orig"
+grep -q 'errors=continue /dev/block/mmcblk0p4' "$WORK/root/loadapp.sh"
+
+# Without /initlogo.rle, init writes "A N D R O I D" on the console. A black
+# 640x480 image in its RGB565 RLE format: (count, color) pairs of uint16
+python3 - "$WORK/root/initlogo.rle" << 'EOF'
+import struct, sys
+pixels, runs = 640 * 480, b''
+while pixels:
+    n = min(pixels, 0xffff)
+    runs += struct.pack('<HH', n, 0)
+    pixels -= n
+open(sys.argv[1], 'wb').write(runs)
+EOF
+
 # Entries without a leading "./", owned by root, as the kernel expects
 (cd "$WORK/root" && bsdtar -cf ../ramdisk.cpio --format newc --uid 0 --gid 0 $(ls -A))
 

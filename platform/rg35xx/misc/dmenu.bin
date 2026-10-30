@@ -34,7 +34,7 @@ if [ -e /dev/block/mmcblk1p1 ]; then
 else
     SDCARD2_DEVICE=/dev/block/mmcblk1
 fi
-mount -t vfat -o rw,utf8,noatime $SDCARD2_DEVICE /mnt/SDCARD2 ||
+mount -t vfat -o rw,utf8,noatime,errors=continue $SDCARD2_DEVICE /mnt/SDCARD2 ||
     mount -t exfat -o rw,utf8,noatime $SDCARD2_DEVICE /mnt/SDCARD2
 
 if [ -f /misc/waitForUSB ]; then
