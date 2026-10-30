@@ -61,6 +61,8 @@ rm -rf "$OUT"
 mkdir -p "$OUT"
 rsync -a --exclude .gitkeep "$ROOT_DIR/static/build/" "$OUT/"
 rsync -a --exclude .gitkeep "$ROOT_DIR/static/configs/" "$OUT/"
+# RG35XX defaults on top (cpuclock.txt per core, in this CPU's MHz)
+rsync -a "$PLATFORM_DIR/configs/" "$OUT/"
 for app in $APPS; do
     rsync -a "$ROOT_DIR/static/packages/App/$app/" "$OUT/"
 done

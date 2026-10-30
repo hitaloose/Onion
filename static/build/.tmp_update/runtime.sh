@@ -463,11 +463,11 @@ launch_game() {
                 # only part of the key events
                 export SDL_FBCON_NOKEYBOARD=1
 
-                # The Miyoo RetroArch sets the clock itself while a game runs.
-                # Here interactive stays near 504 MHz in games: the time
-                # spent waiting for vsync looks idle, so frames come late.
-                # Run at the 1200 MHz maximum (launch_game_postprocess
-                # restores interactive)
+                # interactive stays near 504 MHz in games: the time spent
+                # waiting for vsync looks idle, so frames come late. Run at
+                # a fixed clock: 1200 MHz, or the core's cpuclock.txt, which
+                # RetroArch writes to scaling_max_freq (patch 0006).
+                # launch_game_postprocess restores interactive and 1200 MHz
                 echo performance > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
             fi
 
@@ -627,6 +627,7 @@ launch_game_postprocess() {
     # Reset CPU frequency
     if is_rg35xx; then
         echo interactive > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+        echo 1200000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
     else
         echo ondemand > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
     fi

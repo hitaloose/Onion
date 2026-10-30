@@ -1,0 +1,75 @@
+--- a/runloop.c	2026-10-30 16:24:28
++++ b/runloop.c	2026-10-30 16:53:32
+@@ -4669,7 +4669,61 @@
+          video_st->av_info.timing.sample_rate);
+ 
+    return true;
++}
++
++#ifdef RG35XX
++/* Onion's cpuclock.txt, read like the Miyoo RetroArch does: first
++ * config/<core>/cpuclock.txt, then ./cpuclock.txt. The runtime runs games
++ * with the performance governor, so the clock is set as scaling_max_freq
++ * (the cpufreq table rounds it down to the next step). Without a file the
++ * clock is 1200 MHz, also the cap: at 1488 MHz the device hung under load
++ * while charging */
++static void rg35xx_set_cpuclock(const char *core_name)
++{
++   char config_dir[PATH_MAX_LENGTH];
++   char path[PATH_MAX_LENGTH];
++   FILE *fp  = NULL;
++   int clock = 1200;
++
++   if (!string_is_empty(core_name))
++   {
++      fill_pathname_application_special(config_dir, sizeof(config_dir),
++            APPLICATION_SPECIAL_DIRECTORY_CONFIG);
++      fill_pathname_join_special_ext(path, config_dir, core_name,
++            "cpuclock", ".txt", sizeof(path));
++      fp = fopen(path, "r");
++   }
++
++   if (!fp)
++   {
++      strlcpy(path, "./cpuclock.txt", sizeof(path));
++      fp = fopen(path, "r");
++   }
++
++   if (fp)
++   {
++      if (fscanf(fp, "%d", &clock) != 1 || clock < 100 || clock > 2400)
++      {
++         RARCH_WARN("[CPU]: Ignoring %s.\n", path);
++         clock = 1200;
++      }
++      fclose(fp);
++   }
++   else
++      strlcpy(path, "default", sizeof(path));
++
++   if (clock > 1200)
++      clock = 1200;
++
++   fp = fopen("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq", "w");
++   if (fp)
++   {
++      fprintf(fp, "%d", clock * 1000);
++      fclose(fp);
++   }
++   RARCH_LOG("[CPU]: %s: %d MHz.\n", path, clock);
+ }
++#endif
+ 
+ bool runloop_event_init_core(
+       settings_t *settings,
+@@ -4715,6 +4769,10 @@
+       sys_info->info.library_name = msg_hash_to_str(MSG_UNKNOWN);
+    if (!sys_info->info.library_version)
+       sys_info->info.library_version = "v0";
++
++#ifdef RG35XX
++   rg35xx_set_cpuclock(sys_info->info.library_name);
++#endif
+ 
+    _len = strlcpy(
+          video_st->title_buf,

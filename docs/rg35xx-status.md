@@ -5,7 +5,8 @@
 - **Hi-res frames are downscaled**: RetroArch draws 320x240 for the hardware 2x scaling, so SNES
   hi-res (512 wide) and PS1 640x480 modes lose detail. Could switch to a 640x480 mode for those.
 - **CPU clock**: capped at 1200 MHz because 1488 MHz hung the device under load while charging.
-  1296/1392 MHz untested.
+  1296/1392 MHz untested. Games run with the performance governor at the core's `cpuclock.txt`
+  (RetroArch patch 0006, defaults in `platform/rg35xx/configs/`); a Miyoo value above 1200 is capped.
 - **`LD_PRELOAD=.../libpadsp.so`** is still hardcoded in GameSwitcher (`gs_history.h`),
   `state.h`, `apps.h`, `randomGamePicker.c` and some scripts. On the RG35XX the loader only prints
   a warning and goes on.
