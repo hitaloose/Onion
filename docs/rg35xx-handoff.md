@@ -202,8 +202,11 @@ Pendências de sistema, antes da G4 (N64/PSP). Lista completa na seção "Open i
   stock), não o 28; o DTS aponta para ele e `kernel/patches/0005` desliga o alto-falante com o fone
   plugado (no Android isso era da HAL de áudio). Testado (2026-10-30), ver `docs/rg35xx-kernel.md`,
   seção "Earphone jack";
-- base do ramdisk (`init`, `/charger`), bootloaders e `uenv.txt` ainda são do Garlic (impede
-  release público).
+- ~~base do ramdisk (`init`, `/charger`), bootloaders e `uenv.txt` ainda são do Garlic~~: comparados
+  com a imagem stock da Anbernic (`35XX-64GB230309EN.IMG`, 2023-03-09) em 2026-10-30, são os arquivos
+  de fábrica (bootloader e U-Boot byte a byte, ramdisk com o mesmo conteúdo, `uenv.txt` e imagens de
+  carga idênticos). Do Garlic sobram só as tabelas de bateria do DTS (2600/2100/2800 mAh). Tabela
+  em `docs/rg35xx-kernel.md`, "Stock or Garlic?".
 
 ## 7. Aparelho de teste (2026-10-30)
 

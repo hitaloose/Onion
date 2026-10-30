@@ -244,8 +244,27 @@ shows one image from U-Boot until MainUI. `loadapp.sh` mounts the roms partition
 Garlic does; the kernel default `remount-ro` left the card read-only after any FAT error, and
 `fat_remount` in 3.10 ignores options, so it only works at that first mount.
 
-**Still from Garlic**: the ramdisk base, `bootloader.img`, `u-boot-dtb.img`, `uenv.txt` and the boot
-images. A release needs these replaced, or proof that they are the stock Anbernic files.
+**Stock or Garlic?** Compared on 2026-10-30 with the Anbernic stock card image `35XX-64GB230309EN.IMG`
+(firmware of 2023-03-09; a `TF1.img` backup has the same misc partition) and with Garlic's `garlic.img`.
+All three cards have the same GPT layout (MISC 10 MB at sector 16384, SYSTEM 512 MB, CONFIG, ROMS).
+
+| File | Where it comes from |
+|---|---|
+| `bootloader.img` (raw at 0x200200 on the card) | stock, byte for byte |
+| U-Boot (raw at 0x300000; "U-Boot 2015.04 (Feb 25 2023 - 10:09:24)Actions-Semi") | stock, byte for byte |
+| `ramdisk.img` | stock: same 43 entries, modes and contents; only the image header and cpio dates differ |
+| `uenv.txt`, `{0..5}_charger_frame`, `charger_logo`, `battery_low`, `recovery_logo` (`.bmp.gz`) | stock, identical |
+| `kernel.dtb` | Garlic: the stock tree with a 2600 mAh battery (stock: 2100 mAh, other OCV table, `terminal_voltage` 3450 vs 3200 mV), `boot_cap_threshold` 3 → 0 and no `moto_pwm_gpio` |
+| `dtbs/`, `dmenu.bin`, `hdmi.bin`, `def_config.bin`, `boot_logo`, `uImage`, `modules/` | Garlic (`uImage` built by blackseraph, 2023-04-06) |
+
+The raw areas of `garlic.img` differ from stock only in the GPT and leftover FAT sectors in unused
+space. Garlic's card image has no `bootloader.img`/`u-boot-dtb.img` in misc (only its CopyPaste
+package does), so U-Boot does not need them there. The stock `/system/dmenu/dmenu_ln` runs
+`/misc/dmenu.bin` when it exists, otherwise the Anbernic launcher `/mnt/vendor/bin/dmenu.bin`: that is
+the hook both Garlic and this port use, so a stock card only needs our files in misc.
+
+So of the boot chain only the battery part of the device tree (`gs705a.dtsi`, and the
+`rg35xx-{2100,2800}mAh.dts` tables) is still Garlic's work; everything else is ours or stock.
 
 ## Installing
 
@@ -272,4 +291,5 @@ and compare `md5sum`. Rollback: card in the Mac, copy `garlic-misc/*` back over 
   leaves a trace. Confirmed on battery power after a reboot (2026-10-30).
 - **Unplugging USB once rebooted the device**: probably Onion's `chargingState`, which powers off when
   the cable goes and is no longer started at boot.
-- The ramdisk base, the bootloaders and `uenv.txt` are still Garlic's (see "Boot ramdisk").
+- The battery tables of the device tree are Garlic's; the rest of the boot chain is stock or ours
+  (see "Boot ramdisk", "Stock or Garlic?").
