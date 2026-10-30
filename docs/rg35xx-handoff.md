@@ -91,9 +91,12 @@ Implantar com o aparelho rodando o Onion (ADB habilitado por `/misc/enableADB`):
   320x240 e o hardware amplia 2x. O RetroArch confere o modo do fb a cada quadro (patch 0002).
 - RetroArch genérico lia `~/.config/retroarch`: patches 0001/0003 usam `$HOME/.retroarch`.
 - Binds do `retroarch.cfg` do Onion usam a numeração do Miyoo; `rg35xx_retroarch.cfg` traduz.
-- `keymon`: o "segurar MENU" funciona (~0,7 s), mas sair do jogo direto (sem o GameSwitcher) exige
-  segurar e soltar MENU no momento certo, com ou sem cabo (pendente, ver 6b). `quietMainUI` (injeta
-  L1) foi desligado no RG35XX.
+- `keymon`: `quietMainUI` (injeta L1) foi desligado no RG35XX.
+- Comandos UDP do RetroArch (`QUIT`, `PAUSE`...): o `udp.c` do Onion manda antes um `VERSION` e
+  desiste se não houver resposta em 100 ms (3 tentativas, ~1,8 s). O RetroArch não lia comandos
+  enquanto o `enable_hotkey` (MENU, botão 9) estava segurado: `input_driver_poll()` retorna cedo com
+  `INP_FLAG_BLOCK_LIBRETRO_INPUT`. Por isso segurar MENU não saía do jogo (só soltando dentro da
+  janela das tentativas). Corrigido em `retroarch/patches/0005`.
 - `libpng`: headers do Onion são 1.2; no RG35XX `png/png.h` aponta para o 1.6 do sysroot.
 
 ## 5. Pendências (ver também `docs/rg35xx-status.md`)
@@ -175,8 +178,9 @@ Pendências de sistema, antes da G4 (N64/PSP). Lista completa na seção "Open i
   de 4,3 V; `kernel/patches/0004` usa 3,8 V como o kernel do Garlic. Na tela de carga só o power
   atua (toque acende, segurar liga);
 - ~~estalos baixos no alto-falante~~: sumiram com o `0004` (vinham da carga ligando e desligando);
-- sair do jogo sem o GameSwitcher: hoje é preciso segurar e soltar MENU no momento certo (com ou
-  sem cabo); deveria ser só segurar;
+- ~~sair do jogo sem o GameSwitcher exigia soltar MENU no momento certo~~: o RetroArch não lia os
+  comandos UDP com o botão de atalho segurado (`retroarch/patches/0005`, ver seção 4). Testado
+  (2026-10-30): segurar MENU sai do jogo;
 - nível da bateria leva ~7 s para aparecer depois de ligar (a gauge reporta 0% até a primeira
   medida);
 - ~~ADB some depois do boot~~: estável desde o `0004` (era a carga oscilando na porta USB);

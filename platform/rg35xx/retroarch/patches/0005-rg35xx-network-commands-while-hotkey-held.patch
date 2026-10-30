@@ -1,0 +1,24 @@
+--- a/input/input_driver.c	2026-10-30 12:53:27.767558005 +0000
++++ b/input/input_driver.c	2026-10-30 12:53:27.770558005 +0000
+@@ -6086,6 +6086,21 @@
+    {
+       for (i = 0; i < max_users; i++)
+          input_st->turbo_btns.frame_enable[i] = 0;
++#if defined(HAVE_COMMAND) && defined(RG35XX)
++      /* MENU is enable_hotkey here: keep reading network commands
++       * (keymon sends QUIT while MENU is still held) */
++      for (i = 0; i < ARRAY_SIZE(input_st->command); i++)
++      {
++         if (input_st->command[i])
++         {
++            memset(input_st->command[i]->state,
++                   0, sizeof(input_st->command[i]->state));
++
++            input_st->command[i]->poll(
++               input_st->command[i]);
++         }
++      }
++#endif
+       return;
+    }
+ 
