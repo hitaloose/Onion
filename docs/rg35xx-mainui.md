@@ -61,7 +61,8 @@ Coordenadas em pixels de 640x480 (multiplicadas por `g_scale`, que é 1 no RG35X
   do Onion já apaga esses textos). Uma bolinha por aba, `y = 389`, passo igual à largura
   do `dot-a.png` + 5 px (29 no Silky, 18 no Analogue), começando em `320 − n·passo/2`. ←/→ trocam de aba, A abre, Configurações abre o Tweaks.
 - **Jogos**: grade 4x2 a partir de `(12, 70)`, células de 154x170, ícone com centro a 70 px do topo da
-  célula, nome com centro a 150 px, fonte `grid3x4`. Setas andam na grade, L1/R1 trocam de página;
+  célula, nome com centro a 132 px, fonte `grid3x4`. O nome fica dentro da caixa do `bg-game-item-f.png` (no Silky
+  a caixa ocupa os 153 px de cima da imagem de 170, o resto é sombra; com 150 o nome cortava a borda). Setas andam na grade, L1/R1 trocam de página;
   rodapé com página/total. Sistema sem ícone mostra só o nome no centro da célula.
 - **Expert**: grade 3x3 de `RApp/*` a partir de `(−1, 60)`, células de 214x120 (cobrem exatamente
   640x360), `bg-ra-list-item.png` atrás do selecionado, logo centralizado; o nome só aparece se não

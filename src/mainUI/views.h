@@ -37,7 +37,7 @@
 #define GAMES_CELL_W 154
 #define GAMES_CELL_H 170
 #define GAMES_ICON_Y 70  // icon center, from the cell top
-#define GAMES_LABEL_Y 150 // label center, from the cell top
+#define GAMES_LABEL_Y 132 // label center, inside the box of bg-game-item-f.png (top 153 px)
 
 // Expert tab: 3x3 grid of bg-ra-list-item.png (214x120)
 #define EXPERT_COLS 3

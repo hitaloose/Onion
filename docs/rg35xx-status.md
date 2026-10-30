@@ -14,6 +14,9 @@
 - **MainUI**: the Miyoo screens are redrawn from the Onion theme files (`docs/rg35xx-mainui.md`).
   Still missing or unconfirmed: the box art position in game lists, the Miyoo Settings screen (the
   tab opens Tweaks), the empty list image, list marks and pop-up menus, theme background music.
+- **GBA aspect**: Onion's `gpSP.cfg` sets Custom aspect plus `video_dingux_ipu_keep_aspect`, which only
+  the Miyoo video driver reads; with `gl` it stretched to the 640x480 custom viewport. The RG35XX card
+  gets its own `gpSP.cfg` (Core Provided, 3:2 at 640x427) and `gpSP.glslp` (sharp-bilinear-simple).
 - **RApp packages** are not copied to the card by `dist.sh`, so the Expert tab is empty; standalone
   emulators are not built.
 - The FAT partition always logs "Volume was not properly unmounted": kernel 3.10 does not clear the
