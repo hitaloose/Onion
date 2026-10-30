@@ -219,8 +219,11 @@ Actions SDK tree has no board device tree with a `/pmu` node and its defconfig l
 without a serial console two flashes failed blind (work parked in `~/Development/u-boot_s500-rg35xx`,
 backups in `~/rg35xx-backup/`).
 
-**Other changes over the stock ramdisk.** `initlogo.rle` is a black 640x480 image: without it init
-writes "A N D R O I D" on `tty0`. `loadapp.sh` mounts the roms partition with `errors=continue`, as
+**Other changes over the stock ramdisk.** `initlogo.rle` is Onion's boot screen
+(`src/bootScreen/res/bootScreen.png`, converted by `tools/bootlogo.py` to init's RGB565 RLE; init
+draws it fine on the 32 bpp framebuffer): without it init writes "A N D R O I D" on `tty0`. The same
+script writes `cache/rg35xx/boot_logo.bmp.gz` (24-bit BMP) for U-Boot's logo in `misc`, so the screen
+shows one image from U-Boot until MainUI. `loadapp.sh` mounts the roms partition with `errors=continue`, as
 Garlic does; the kernel default `remount-ro` left the card read-only after any FAT error, and
 `fat_remount` in 3.10 ignores options, so it only works at that first mount.
 

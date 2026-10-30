@@ -86,7 +86,11 @@ Implantar com o aparelho rodando o Onion (ADB habilitado por `/misc/enableADB`):
 - SDL 1.2 fbcon: patches em `buildroot/patches/sdl/`: ficar no VT ativo sem `VT_LOCKSWITCH`
   (0100), `SDL_FBCON_NOKEYBOARD` (0101, usado pelo runtime para jogos), não restaurar modo do VT
   (0102) nem modo de vídeo (0103) ao sair. Sem isso: telas pretas travadas em `VT_WAITACTIVE`,
-  teclas divididas entre GameSwitcher e RetroArch, MainUI sem teclado/ampliado.
+  teclas divididas entre GameSwitcher e RetroArch, MainUI sem teclado/ampliado. `0104`: com
+  `SDL_FBCON_DONT_CLEAR` o `SDL_SetVideoMode` não limpa a tela (o original só respeita isso ao
+  sair); o runtime usa no `bootScreen` do boot e no MainUI, para não haver quadro preto entre telas.
+- `vtreset` não volta o VT para `KD_TEXT`: em modo texto o fbcon pinta o console vazio por cima
+  da tela (era a piscada preta depois do logo do boot).
 - `owldss`: `overlay0` aceita `input_size` ≠ `output_size` → escala por hardware. RetroArch desenha
   320x240 e o hardware amplia 2x. O RetroArch confere o modo do fb a cada quadro (patch 0002).
 - RetroArch genérico lia `~/.config/retroarch`: patches 0001/0003 usam `$HOME/.retroarch`.
@@ -108,7 +112,7 @@ Implantar com o aparelho rodando o Onion (ADB habilitado por `/misc/enableADB`):
 4. Clock por sistema e `target_loads` do `interactive` (bateria), vídeo em thread para PS1.
 5. `LD_PRELOAD=libpadsp.so` fixo em GameSwitcher/state.h/apps.h/randomGamePicker e scripts.
 6. mGBA (fork libretro usa CMake), aba Expert/RApp, mais sistemas/cores, instalador (Fase 6),
-   logo de boot do Onion no `misc`, HDMI, segundo cartão, Tweaks sem opções do Miyoo.
+   HDMI, segundo cartão, Tweaks sem opções do Miyoo.
 
 ## 6. Plano da GPU (PowerVR SGX544MP1): próximo trabalho
 
@@ -188,7 +192,9 @@ Pendências de sistema, antes da G4 (N64/PSP). Lista completa na seção "Open i
   96% gravado aos 5,5 s;
 - ~~ADB some depois do boot~~: estável desde o `0004` (era a carga oscilando na porta USB);
 - ~~texto "android" na tela durante o boot~~: o `init` escreve "A N D R O I D" no `tty0` quando
-  falta `/initlogo.rle`; o `ramdisk/build.sh` gera um preto. Testado (2026-10-30);
+  falta `/initlogo.rle`; o `ramdisk/build.sh` gera um com a tela de boot do Onion, e também o
+  `boot_logo.bmp.gz` da U-Boot (`tools/bootlogo.py`). Com o SDL `0104` e o `vtreset` sem
+  `KD_TEXT`, U-Boot → `init` → `bootScreen` → MainUI passa sem piscar em preto. Testado (2026-10-30);
 - ~~FAT com `errors=remount-ro`~~: o `ramdisk/build.sh` põe `errors=continue` no mount do
   `loadapp.sh` (o `fat_remount` do 3.10 ignora opções, só vale na montagem). Testado (2026-10-30);
 - fone de ouvido não testado;

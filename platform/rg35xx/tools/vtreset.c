@@ -3,11 +3,12 @@
 // SDL fbcon switches to a free VT, puts it in KD_GRAPHICS and VT_PROCESS mode
 // and only switches back on a clean exit. After a crash that VT stays active
 // in that state and the next SDL program waits forever in VT_WAITACTIVE.
-// This puts the active VT back in text/auto mode and activates the target VT.
+// This puts the active VT back in auto mode and activates the target VT. The
+// VT stays in graphics mode: back in text mode fbcon would paint the empty
+// console over the screen (the boot logo, at boot).
 // Usage: vtreset [vt]   (default 1)
 
 #include <fcntl.h>
-#include <linux/kd.h>
 #include <linux/vt.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,8 +37,6 @@ int main(int argc, char *argv[])
         ioctl(active, VT_RELDISP, 1);
         if (ioctl(active, VT_SETMODE, &mode) < 0)
             perror("vtreset: VT_SETMODE");
-        if (ioctl(active, KDSETMODE, KD_TEXT) < 0)
-            perror("vtreset: KDSETMODE");
         close(active);
     }
 

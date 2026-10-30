@@ -1,0 +1,20 @@
+--- a/src/video/SDL_video.c
++++ b/src/video/SDL_video.c
+@@ -721,12 +721,15 @@
+ 			                           vf->palette->colors);
+ 		}
+ 
+-		/* Clear the surface to black */
++		/* Clear the surface to black, unless the program is to draw over
++		 * what is on screen (SDL_FBCON_DONT_CLEAR, as in FB_VideoQuit) */
+ 		video->offset_x = 0;
+ 		video->offset_y = 0;
+ 		mode->offset = 0;
+ 		SDL_SetClipRect(mode, NULL);
+-		SDL_ClearSurface(mode);
++		if ( !SDL_getenv("SDL_FBCON_DONT_CLEAR") ) {
++			SDL_ClearSurface(mode);
++		}
+ 
+ 		/* Now adjust the offsets to match the desired mode */
+ 		video->offset_x = (mode->w-width)/2;

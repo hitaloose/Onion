@@ -6,6 +6,7 @@
 #   garlic-misc/ on the roms partition of the test card.
 # Output: cache/rg35xx/ramdisk.img, a U-Boot legacy image like the stock one
 #         (type ramdisk, uncompressed newc cpio, load address 0x02000000)
+#         cache/rg35xx/boot_logo.bmp.gz, U-Boot's logo, from Onion's boot screen
 set -e
 RAMDISK_DIR="$(cd "$(dirname "$0")" && pwd)"
 OUT="$RAMDISK_DIR/../../../cache/rg35xx/ramdisk.img"
@@ -30,17 +31,10 @@ sed -i.orig 's|-o rw,utf8,noatime,nodiratime /dev/block/mmcblk0p4|-o rw,utf8,noa
 rm "$WORK/root/loadapp.sh.orig"
 grep -q 'errors=continue /dev/block/mmcblk0p4' "$WORK/root/loadapp.sh"
 
-# Without /initlogo.rle, init writes "A N D R O I D" on the console. A black
-# 640x480 image in its RGB565 RLE format: (count, color) pairs of uint16
-python3 - "$WORK/root/initlogo.rle" << 'EOF'
-import struct, sys
-pixels, runs = 640 * 480, b''
-while pixels:
-    n = min(pixels, 0xffff)
-    runs += struct.pack('<HH', n, 0)
-    pixels -= n
-open(sys.argv[1], 'wb').write(runs)
-EOF
+# Onion's boot screen as /initlogo.rle, which init draws on the framebuffer.
+# Without it init writes "A N D R O I D" on the console instead
+python3 "$RAMDISK_DIR/../tools/bootlogo.py" rle "$RAMDISK_DIR/../../../src/bootScreen/res/bootScreen.png" \
+    "$WORK/root/initlogo.rle"
 
 # Entries without a leading "./", owned by root, as the kernel expects
 (cd "$WORK/root" && bsdtar -cf ../ramdisk.cpio --format newc --uid 0 --gid 0 $(ls -A))
@@ -60,3 +54,9 @@ hcrc = zlib.crc32(header(0)) & 0xffffffff
 open(sys.argv[2], 'wb').write(header(hcrc) + data)
 EOF
 echo "$OUT: $(wc -c < "$OUT" | tr -d ' ') bytes"
+
+# U-Boot's boot logo for the misc partition, the same image
+LOGO="$(dirname "$OUT")/boot_logo.bmp.gz"
+python3 "$RAMDISK_DIR/../tools/bootlogo.py" bmp "$RAMDISK_DIR/../../../src/bootScreen/res/bootScreen.png" "$WORK/logo.bmp"
+gzip -9 -n -c "$WORK/logo.bmp" > "$LOGO"
+echo "$LOGO: $(wc -c < "$LOGO" | tr -d ' ') bytes"

@@ -93,7 +93,8 @@ main() {
     fi
 
     cd $sysdir
-    bootScreen "Boot"
+    # Drawn over the same image as the boot logo, and left on screen for MainUI
+    SDL_FBCON_DONT_CLEAR=1 bootScreen "Boot"
 
     # Set filebrowser branding to "Onion" and apply custom theme
     if [ -f "$sysdir/config/filebrowser/first.run" ]; then
@@ -240,7 +241,8 @@ launch_main_ui() {
         # Onion's own MainUI: no battery image, binary mount or wifi to track
         mute_theme_bgm
         cd $miyoodir/app
-        ./MainUI 2>&1 > /dev/null
+        # Keep what is on screen until MainUI draws, instead of a black frame
+        SDL_FBCON_DONT_CLEAR=1 ./MainUI 2>&1 > /dev/null
         check_hide_recents
         mv -f /tmp/cmd_to_run.sh $sysdir/cmd_to_run.sh
         set_prev_state "mainui"
