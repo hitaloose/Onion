@@ -10,7 +10,6 @@
 - **Random Game app** is not on the card: `randomGamePicker` picks from the Miyoo MainUI's
   `<system>_cache6.db` SQLite caches, which our MainUI does not write, so it finds no games. It
   needs a fallback that scans the ROM folders (or the MainUI writing the caches).
-- **mGBA core**: the libretro fork builds with CMake, not `Makefile.libretro`; `cores.sh` skips it.
 - **MainUI**: the Miyoo screens are redrawn from the Onion theme files (`docs/rg35xx-mainui.md`).
   Still missing or unconfirmed: the box art position in game lists, the Miyoo Settings screen (the
   tab opens Tweaks), the empty list image, list marks and pop-up menus, theme background music.
@@ -23,6 +22,12 @@
   dirty flag on remount read-only. Real corruption shows as "invalid cluster chain" errors.
 
 ## Fixed, for the record
+
+- mGBA: the libretro fork has no `Makefile.libretro`; `cores.sh` builds it with CMake
+  (`-DLIBMGBA_ONLY=ON -DBUILD_LIBRETRO=ON`, Buildroot's `toolchainfile.cmake`). It runs GBA when
+  picked in the game list options and the Super Game Boy system. 1008 MHz: F-Zero Maximum Velocity
+  87 fps unthrottled (102 at 1200, 74 at 840; gpSP 455 at 1200). Onion's `mGBA.cfg` forced the SDL
+  audio driver and the Miyoo aspect; the RG35XX one is like gpSP's (core aspect, sharp-bilinear).
 
 - `LD_PRELOAD=.../libpadsp.so` (Miyoo OSS-to-audioserver shim): the C programs use `PADSP_PRELOAD`
   (`src/common/utils/padsp.h`, empty off the Miyoo) and `dist.sh` drops the preload from the

@@ -26,6 +26,7 @@ EMU_PACKAGES="
 Nintendo - Game Boy (Gambatte)
 Nintendo - Game Boy Color (Gambatte)
 Nintendo - GBA (gpSP)
+Nintendo - Super Game Boy (mGBA)
 Nintendo - NES (FCEUmm)
 Nintendo - Famicom Disk Syst. (FCEUmm)
 Nintendo - SNES (Beetle Supafaust)

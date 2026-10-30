@@ -19,7 +19,7 @@ está desativado). Fork independente, sem PR ao Onion: ver o `README.md`.
 - MainUI próprio (`src/mainUI/`) com as telas do Miyoo (tela inicial com abas, grade de Jogos e
   Expert, listas, Apps) desenhadas pelos arquivos dos temas do Onion (`docs/rg35xx-mainui.md`), GameSwitcher (overlay com captura da tela),
   keymon (volume, brilho, suspensão, MENU curto/longo/duplo), batmon, desligamento limpo.
-- RetroArch 1.22.2 + patches do Onion + patches RG35XX; 9 cores compilados; 14 sistemas.
+- RetroArch 1.22.2 + patches do Onion + patches RG35XX; 10 cores compilados; 15 sistemas.
 - Performance (benchmark sem limite de FPS, CPU limitada a 1,2 GHz, com USB): SNES 84, GB 218,
   GBA 126, NES 131, MD 167, PCE 146 FPS.
 
@@ -141,7 +141,7 @@ Implantar com o aparelho rodando o Onion (ADB habilitado por `/misc/enableADB`):
    `cmd_to_run.sh` (dependia do prefixo). O GLO agora abre com Y (`docs/rg35xx-mainui.md`, item 13).
 6. Telas do MainUI ainda sem referência (capa na lista, Configurações do Miyoo, lista vazia, pop-ups):
    ver "O que falta" em `docs/rg35xx-mainui.md`.
-7. mGBA (fork libretro usa CMake), pacotes RApp no cartão (a aba Expert já existe), mais sistemas/cores, instalador (Fase 6),
+7. ~~mGBA~~ (2026-10-30, CMake no `cores.sh`, 1008 MHz), pacotes RApp no cartão (a aba Expert já existe), mais sistemas/cores, instalador (Fase 6),
    HDMI, segundo cartão, Tweaks sem opções do Miyoo.
 
 ## 6. Plano da GPU (PowerVR SGX544MP1): próximo trabalho

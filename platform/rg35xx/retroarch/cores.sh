@@ -16,13 +16,14 @@ mkdir -p "$ROOT_DIR/cache/rg35xx/cores"
     mkdir -p /work/cores && cd /work/cores
     failed=''
     for core in $CORES; do
-        # name repo makefile-dir make-arguments
+        # name repo makefile-dir make-arguments (cmake arguments with build=cmake)
+        build=make
         case \$core in
         gambatte)          repo=gambatte-libretro;     dir=.;  args='platform=unix' ;;
         fceumm)            repo=libretro-fceumm;       dir=.;  args='-f Makefile.libretro platform=unix' ;;
         snes9x2005)        repo=snes9x2005;            dir=.;  args='platform=unix' ;;
         gpsp)              repo=gpsp;                  dir=.;  args='platform=unix HAVE_DYNAREC=1 CPU_ARCH=arm MMAP_JIT_CACHE=1' ;;
-        mgba)              repo=mgba;                  dir=.;  args='-f Makefile.libretro platform=unix' ;;
+        mgba)              repo=mgba;                  dir=.;  build=cmake; args='-DLIBMGBA_ONLY=ON -DBUILD_LIBRETRO=ON' ;;
         picodrive)         repo=picodrive;             dir=.;  args='-f Makefile.libretro platform=unix ARCH=arm' ;;
         genesis_plus_gx)   repo=Genesis-Plus-GX;       dir=.;  args='-f Makefile.libretro platform=unix' ;;
         pcsx_rearmed)      repo=pcsx_rearmed;          dir=.;  args='-f Makefile.libretro platform=unix ARCH=arm DYNAREC=ari64 HAVE_NEON=1 BUILTIN_GPU=neon' ;;
@@ -32,11 +33,28 @@ mkdir -p "$ROOT_DIR/cache/rg35xx/cores"
         esac
         [ -d \$repo ] || git clone -q --depth 1 --recurse-submodules --shallow-submodules https://github.com/libretro/\$repo.git
         cd \$repo/\$dir
-        make \$args clean > /dev/null 2>&1 || true
-        # Flags go through the environment: on the command line they would
-        # replace the core's own CFLAGS (include paths, defines)
-        if CFLAGS=\"\$CORE_FLAGS\" CXXFLAGS=\"\$CORE_FLAGS\" make -j\$(nproc) \$args > /work/cores/\$core.log 2>&1; then
-            so=\$(ls -t *_libretro.so | head -1)
+        if [ \$build = cmake ]; then
+            # Buildroot's toolchain file: compiler, sysroot and find paths
+            rm -rf build-rg35xx
+            built() {
+                cmake -S . -B build-rg35xx -G Ninja \\
+                    -DCMAKE_TOOLCHAIN_FILE=/work/sdk/share/buildroot/toolchainfile.cmake \\
+                    -DCMAKE_BUILD_TYPE=Release \\
+                    -DCMAKE_C_FLAGS=\"-O2 \$CORE_FLAGS\" -DCMAKE_CXX_FLAGS=\"-O2 \$CORE_FLAGS\" \\
+                    \$args && cmake --build build-rg35xx -j\$(nproc)
+            }
+            sodir=build-rg35xx
+        else
+            make \$args clean > /dev/null 2>&1 || true
+            # Flags go through the environment: on the command line they would
+            # replace the core's own CFLAGS (include paths, defines)
+            built() {
+                CFLAGS=\"\$CORE_FLAGS\" CXXFLAGS=\"\$CORE_FLAGS\" make -j\$(nproc) \$args
+            }
+            sodir=.
+        fi
+        if built > /work/cores/\$core.log 2>&1; then
+            so=\$(ls -t \$sodir/*_libretro.so | head -1)
             \${CROSS_COMPILE}strip -o /src/cache/rg35xx/cores/\${core}_libretro.so \$so
             echo \"OK   \$core\"
         else

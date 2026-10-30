@@ -31,8 +31,8 @@ RG35XX Plus, H, SP or 2024, which use different hardware.
   shortcuts (short, long and double press).
 - RetroArch 1.22.2 with Onion's patches, drawing with OpenGL ES 2 on the GPU (shaders included),
   vsync at the panel's 60.46 Hz, and CPU clock per core from Onion's `cpuclock.txt`.
-- 14 systems: GB, GBC, GBA, NES, FDS, SNES, Mega Drive, Master System, Game Gear, Sega CD, 32X,
-  PlayStation, PC Engine and PC Engine CD.
+- 15 systems: GB, GBC, GBA (gpSP, or mGBA per game), Super Game Boy, NES, FDS, SNES, Mega Drive,
+  Master System, Game Gear, Sega CD, 32X, PlayStation, PC Engine and PC Engine CD.
 - Battery level, charging screen, low-battery shutdown, earphone jack, volume and brightness keys,
   sleep, clean shutdown.
 
