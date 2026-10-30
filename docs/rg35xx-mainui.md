@@ -110,10 +110,11 @@ Novas capturas do Onion no Miyoo (vídeos, fóruns) podem fechar os itens 1, 2, 
 
 ## Temas e idiomas
 
-- `platform/rg35xx/tools/get_themes.sh` baixa todos os temas do OnionUI/Themes (`release/*.zip`, 202
-  temas, ~1 GB) para `cache/rg35xx/themes`; o `dist.sh` põe o Silky by DiMo extraído em `Themes/` (é o
-  tema padrão; escolhê-lo no Theme Switcher volta ao padrão) e os outros zipados. O Theme Switcher
-  extrai os previews com `7z` na primeira vez (cerca de 2 minutos para os 202).
+- `platform/rg35xx/tools/get_themes.sh` baixa o Silky by DiMo e os 15 temas da lista "remixed" do
+  OnionUI/Themes (`.github/data/remixed.txt`, ~75 MB) para `cache/rg35xx/themes`; o `dist.sh` põe o
+  Silky extraído em `Themes/` (é o tema padrão; escolhê-lo no Theme Switcher volta ao padrão) e os
+  outros zipados. Com os 202 temas do repositório (~1 GB) o Theme Switcher levava minutos para abrir
+  (extrai os previews com `7z` e carrega todos).
 - Idioma: no Miyoo era escolhido nas Configurações de fábrica. Aqui fica em Tweaks → System →
   Language, que lista `miyoo/app/lang/*.lang` pelo nome em inglês e grava o `language` do
   `system.json`; o MainUI usa o novo idioma ao voltar do Tweaks. O `lt.lang` do Onion tem JSON
