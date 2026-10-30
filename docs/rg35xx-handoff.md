@@ -7,8 +7,9 @@ Documento para continuar o trabalho em outra sessão. Complementa:
 - `docs/rg35xx-mainui.md`: telas do MainUI do Miyoo reimplementadas a partir dos temas
 
 Repositório: fork `git@hitaloose.github.com:hitaloose/Onion.git` (remote `origin`), branch
-`rg35xx-port`. `upstream` = OnionUI/Onion (só para puxar atualizações; nada é enviado para lá).
-O dono do projeto pretende mantê-lo como port no próprio GitHub, sem mandar PR ao Onion.
+`main` (desde 2026-10-30; antes `rg35xx-port`). O trabalho segue no `main` até a primeira release.
+`upstream` = OnionUI/Onion (só para puxar atualizações; nada é enviado para lá, o push do remote
+está desativado). Fork independente, sem PR ao Onion: ver o `README.md`.
 
 ## 1. Estado atual (funciona no aparelho)
 

@@ -1,25 +1,74 @@
-<p>&nbsp;</p>
+# Onion for the Anbernic RG35XX (original)
 
-# <img alt="Onion" src="https://user-images.githubusercontent.com/44569252/179510333-40793fbc-f2a3-4269-8ab9-569b191d423f.png" width="196px">
+An unofficial port of [Onion OS](https://github.com/OnionUI/Onion) to the **original Anbernic
+RG35XX** (2022, Actions ATM7039S / S500, PowerVR SGX544 GPU, 640x480 screen). It is not for the
+RG35XX Plus, H, SP or 2024, which use different hardware.
 
-*An enhanced operating system for your Miyoo Mini and Mini+, featuring fine-tuned emulation with 100+ built-in emulators, auto-save and resume, a wealth of customization options, and much more. Performant, reliable, and straightforward retro gaming right in your pocket.*
+> **Work in progress: there is no release yet.** The port runs on the developer's device, but there
+> is no image to install and the steps in `docs/` assume a development setup over ADB.
 
-<p>&nbsp;</p>
+## About this fork
 
-<p align="center">
-<a href="https://onionui.github.io/docs"><img alt="Getting Started" src="https://user-images.githubusercontent.com/44569252/190487908-0fb16c8e-5ff5-4ee2-921a-0a9427f26587.png"></a>
-<a href="https://onionui.github.io/docs/features"><img alt="Features" src="https://user-images.githubusercontent.com/44569252/190487893-7a4a2287-462a-4d91-a4fc-ace80580653a.png"></a>
-<a href="https://onionui.github.io/docs/faq"><img alt="FAQ" src="https://user-images.githubusercontent.com/44569252/190487922-3d6b8df9-da26-47e8-b397-e4104156ede6.png"></a>
-</p>
+- **Independent project.** This repository is a separate fork maintained on its own. It is not
+  affiliated with, endorsed by or supported by the OnionUI team, and there are no plans to send
+  pull requests to [OnionUI/Onion](https://github.com/OnionUI/Onion): the changes here are made for
+  the RG35XX and are not meant to be merged upstream.
+- **Please do not report RG35XX problems to OnionUI.** Use this repository's issues instead.
+- **Upstream updates** from OnionUI/Onion are pulled in from time to time; nothing is pushed back.
+- **Branches.** Development happens on `main` until the first release. Releases will be tagged on
+  `main`.
+- **Miyoo Mini.** This fork targets the RG35XX only. For the Miyoo Mini and Mini+, use the
+  [official Onion](https://github.com/OnionUI/Onion).
 
-<p align="center">
-<a href="https://github.com/OnionUI/Themes/blob/main/README.md"><img alt="Getting Started" src="https://user-images.githubusercontent.com/44569252/226488035-e321e466-87c3-431f-bc81-52eb6a33c225.png"></a>
-<a href="https://onionui.github.io/docs/ports"><img alt="Features" src="https://user-images.githubusercontent.com/44569252/228782816-cd9c479f-4c46-46ba-abd5-42158d19de7b.png"></a>
-</p>
+## What works
 
+- Boots from the stock Anbernic bootloader and U-Boot into its own Linux 3.10 kernel
+  ([rg35xx-cfw/s500_kernel](https://github.com/rg35xx-cfw/s500_kernel) with patches), its own boot
+  ramdisk and a read-only Buildroot root filesystem, then Onion's `runtime.sh`. Nothing from other
+  custom firmwares is needed.
+- Onion's main menu, redrawn from the Onion theme files (home tabs, Games grid, Expert grid, lists,
+  Apps), GameSwitcher, Tweaks, Theme Switcher, Activity Tracker, auto-save and resume, MENU
+  shortcuts (short, long and double press).
+- RetroArch 1.22.2 with Onion's patches, drawing with OpenGL ES 2 on the GPU (shaders included),
+  vsync at the panel's 60.46 Hz, and CPU clock per core from Onion's `cpuclock.txt`.
+- 14 systems: GB, GBC, GBA, NES, FDS, SNES, Mega Drive, Master System, Game Gear, Sega CD, 32X,
+  PlayStation, PC Engine and PC Engine CD.
+- Battery level, charging screen, low-battery shutdown, earphone jack, volume and brightness keys,
+  sleep, clean shutdown.
 
-<p>&nbsp;</p>
+Known gaps and the plan are in [`docs/rg35xx-status.md`](docs/rg35xx-status.md) and
+[`docs/rg35xx-handoff.md`](docs/rg35xx-handoff.md). Next steps include the first installable image,
+more systems and cores, and N64/PSP on the GPU.
 
-<p align="center"><a href="https://onionui.github.io/docs/features"><img src="https://user-images.githubusercontent.com/44569252/226488511-297034e2-bb69-4f87-bd18-2ae6ff1e7300.gif"></a></p>
+## Building
 
-<p align="right"><sub><i>Icons by <a href="https://icons8.com" target="_blank">Icons8</a></i></sub></p>
+Everything builds in Docker (Buildroot, toolchains, kernel), from the repository root:
+
+```sh
+platform/rg35xx/buildroot/build.sh          # root filesystem and SDK (first run ~30 min)
+platform/rg35xx/kernel/build.sh             # kernel, device tree and modules
+platform/rg35xx/retroarch/build.sh          # RetroArch
+platform/rg35xx/retroarch/cores.sh          # libretro cores
+platform/rg35xx/dist.sh                     # Onion programs and the SD card in cache/rg35xx/sd
+```
+
+## Documentation
+
+| File | Contents |
+|---|---|
+| [`docs/rg35xx-handoff.md`](docs/rg35xx-handoff.md) | Architecture, build and deploy, pitfalls, open items (Portuguese) |
+| [`docs/rg35xx-status.md`](docs/rg35xx-status.md) | Open issues and fixes |
+| [`docs/rg35xx-hardware.md`](docs/rg35xx-hardware.md) | Hardware facts measured on the device |
+| [`docs/rg35xx-kernel.md`](docs/rg35xx-kernel.md) | Kernel, device tree, boot ramdisk, GPU |
+| [`docs/rg35xx-mainui.md`](docs/rg35xx-mainui.md) | Main menu screens and theme files |
+
+## Credits and license
+
+- [Onion OS](https://github.com/OnionUI/Onion) by the OnionUI team and contributors: everything
+  this port builds on. Onion is GPL-3.0, and so is this fork (see [`LICENSE`](LICENSE)).
+- [RetroArch](https://github.com/libretro/RetroArch) and the [libretro](https://github.com/libretro)
+  cores, under their own licenses.
+- Kernel sources from [rg35xx-cfw/s500_kernel](https://github.com/rg35xx-cfw/s500_kernel) (Actions
+  S500 BSP), GPL-2.0.
+- Themes by their authors, from [OnionUI/Themes](https://github.com/OnionUI/Themes).
+- Icons by [Icons8](https://icons8.com).
