@@ -165,6 +165,23 @@ triangle) runs smoothly, at about 789 fps (no vsync wait), `GL renderer: PowerVR
   (an appended line does not override an earlier one in the same file), and Onion's keymon
   SIGSTOPs RetroArch when the screen times out (stop keymon during long adb benchmarks).
 
+## Earphone jack (`patches/0005`)
+
+The jack is sensed on **GPIO 81** (high with a plug in), the stock tree's `earphone_detect2_gpios`.
+`earphone_detect_gpios` (GPIO 28) never changes, and `earphone_detect_method = 3` is unknown to this
+codec driver (it only registers its own detection for 1, IRQ, and 2, ADC). The Garlic kernel requests
+GPIO 81 as `earphone_dect_new`. `rg35xx.dts` points `earphone_detect_gpios` at GPIO 81, flagged
+active low as in the stock tree: `link-owl.c` reports `earphone_is_in()` the other way round, so the
+flag makes `/sys/class/switch/h2w/state` read 2 (headphone) with a plug in and 0 without.
+`link-owl.c` polls the GPIO every 200 ms; on Android the audio HAL then muted the speaker, so the speaker
+kept playing next to the earphone. `patches/0005` switches the amplifier GPIO (40) on each change of
+the jack state. The earphone output itself is always on and follows `DAC PA Volume`. Tested
+(2026-10-30): sound only on the earphone with a plug in, only on the speaker without, volume keys on
+both.
+
+To read an unrequested GPIO through sysfs, write `in` to its `direction` after exporting it: until
+then its input enable bit (`INEN`, 0xB01B0004 + 0xC per bank) stays off and it reads 0.
+
 ## Charger input threshold (`patches/0004`)
 
 The RG35XX is DCIN only (`support_adaptor_type = 1`): any cable counts as a wall adapter, charged at
@@ -247,8 +264,6 @@ and compare `md5sum`. Rollback: card in the Mac, copy `garlic-misc/*` back over 
   charger cycling on a USB port); restarting the adb server on the Mac
   (`adb kill-server`) until it shows up has worked, and so has unplugging and replugging the cable. The USB monitor logs "set adaptor mode" when the
   host does not enumerate in time.
-- **Headphone detection untested**: the stock tree sets `earphone_detect_method = 3` and
-  `earphone_detect2_gpios`, which this codec driver does not know (it uses GPIO 28).
 - **Leaving GameSwitcher for the game list powers the device off** now and then: seen with the
   `sdl` RetroArch driver and again with `gl` and the GPU at 400 MHz. Now explained by the battery
   flag: a 0% gauge reading at boot armed `/tmp/.lowBat` and the first game exit ran `bootScreen

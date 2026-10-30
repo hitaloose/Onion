@@ -1,0 +1,33 @@
+The RG35XX earphone jack is sensed on GPIO 81 (high with a plug in; the stock
+tree names it earphone_detect2_gpios, see the DTS). link-owl.c already polls
+the detect GPIO every 200 ms and sets the h2w switch, but on Android the audio
+HAL then switched the speaker amplifier off; there is none here, so the
+speaker kept playing with the earphone in. Switch the amplifier GPIO on each
+change of the jack state.
+
+--- a/sound/soc/atc260x/link-owl.c
++++ b/sound/soc/atc260x/link-owl.c
+@@ -212,11 +212,22 @@
+ 
+ static void gl5203_earphone_monitor(struct work_struct *work)
+ {
+-	if (earphone_is_in())
++	/* earphone_is_in() is true with the jack empty */
++	int speaker = earphone_is_in();
++	static int last_speaker = -1;
++
++	if (speaker)
+ 		switch_set_state(&headphone_sdev.sdev, SPEAKER_ON);
+ 	else
+ 		switch_set_state(&headphone_sdev.sdev, HEADSET_NO_MIC);
+ 
++	/* No audio HAL here: mute the speaker while the earphone is in */
++	if (speaker_exist && speaker != last_speaker) {
++		gpio_direction_output(speaker_gpio_num,
++			speaker ? !speaker_gpio_active : speaker_gpio_active);
++		last_speaker = speaker;
++	}
++
+ 	if(flag == 0)
+ 	queue_delayed_work(headphone_sdev.wq,
+ 		&headphone_sdev.dwork, msecs_to_jiffies(200));

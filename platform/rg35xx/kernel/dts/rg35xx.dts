@@ -17,6 +17,11 @@
 				 * Garlic kernel ignores but this codec driver follows
 				 * (the speaker stayed off) */
 				speaker_en_gpios = <0x0c 0x28 0x00>;
+				/* The jack is sensed on GPIO 81 (stock
+				 * earphone_detect2_gpios, high with a plug in);
+				 * GPIO 28 never changes. Active low makes
+				 * link-owl.c report h2w = 2 with a plug in */
+				earphone_detect_gpios = <0x0c 0x51 0x01>;
 			};
 		};
 	};

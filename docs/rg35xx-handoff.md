@@ -154,7 +154,7 @@ Fases:
   `rg35xx-gamepad`. Tabela de CPU do Garlic (patch 0003). ADB exige `USB_G_ANDROID=y` e
   `USB_PLATFORM_LINUX` desligado. Volume pelo ALSA `DAC PA Volume`; framebuffer ARGB (o
   `display_fbColor()` lê o layout). Pendências: reboot às vezes desliga, ADB demora a aparecer,
-  texto "android" no boot, fone de ouvido não testado.
+  texto "android" no boot, fone de ouvido não testado (todos resolvidos, ver 6b).
 - **G2 — GPU acordando: feito (2026-10-26).** OpenGL ES 2.0 desenha no painel (`egltest`, ~789 fps
   sem vsync). Pacote Buildroot `powervr-sgx-um` + `libdrm`; WSEGL **FLIP** (a LINUXFB recusa o
   display); `dmenu.bin` carrega `drm.ko`/`pvrsrvkm.ko` do `misc` e roda `pvrsrvctl`. GPU a 400 MHz
@@ -198,7 +198,10 @@ Pendências de sistema, antes da G4 (N64/PSP). Lista completa na seção "Open i
   inclusive entrar e sair de jogo (MENU segurado e GameSwitcher) sem restos de imagem;
 - ~~FAT com `errors=remount-ro`~~: o `ramdisk/build.sh` põe `errors=continue` no mount do
   `loadapp.sh` (o `fat_remount` do 3.10 ignora opções, só vale na montagem). Testado (2026-10-30);
-- fone de ouvido não testado;
+- ~~fone de ouvido não testado~~: o detector é o GPIO 81 (`earphone_detect2_gpios` da árvore
+  stock), não o 28; o DTS aponta para ele e `kernel/patches/0005` desliga o alto-falante com o fone
+  plugado (no Android isso era da HAL de áudio). Testado (2026-10-30), ver `docs/rg35xx-kernel.md`,
+  seção "Earphone jack";
 - base do ramdisk (`init`, `/charger`), bootloaders e `uenv.txt` ainda são do Garlic (impede
   release público).
 
