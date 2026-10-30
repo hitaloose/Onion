@@ -1,6 +1,7 @@
 #ifndef MAINUI_MENU_H__
 #define MAINUI_MENU_H__
 
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
@@ -18,7 +19,7 @@ typedef enum {
     ENTRY_FOLDER, // opens a ROM subfolder (path: relative folder)
     ENTRY_ROM,    // launches a ROM (path: relative file)
     ENTRY_GAME,   // launches a recent/favorite (index: game entry)
-    ENTRY_APP,    // launches an app (path: app folder)
+    ENTRY_APP,    // launches an app (path: app folder, index: app)
     ENTRY_EMPTY   // placeholder for an empty menu
 } EntryType;
 
@@ -34,8 +35,11 @@ typedef enum {
     MENU_RECENTS,
     MENU_FAVORITES,
     MENU_SYSTEMS,
+    MENU_EXPERT,
     MENU_ROMS,
-    MENU_APPS
+    MENU_APPS,
+    MENU_SETTINGS, // main screen tab only: launches Tweaks
+    MENU_KIND_COUNT
 } MenuKind;
 
 typedef struct {
@@ -100,8 +104,9 @@ void menu_sort(Menu *menu)
     qsort(menu->entries, menu->count, sizeof(MenuEntry), _menu_compare);
 }
 
-// Moves the selection, wrapping around on single steps and clamping on pages
-void menu_move(Menu *menu, int delta, int visible)
+// Moves the selection, wrapping around on single steps and clamping on
+// longer moves. Paged menus (grids) scroll a whole page at a time.
+void menu_move(Menu *menu, int delta, int visible, bool paged)
 {
     if (menu->count == 0)
         return;
@@ -114,7 +119,9 @@ void menu_move(Menu *menu, int delta, int visible)
         target = menu->count - 1;
     menu->active = target;
 
-    if (menu->active < menu->top)
+    if (paged)
+        menu->top = menu->active - menu->active % visible;
+    else if (menu->active < menu->top)
         menu->top = menu->active;
     else if (menu->active >= menu->top + visible)
         menu->top = menu->active - visible + 1;

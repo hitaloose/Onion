@@ -26,9 +26,9 @@
 
 #include "./library.h"
 #include "./menu.h"
+#include "./views.h"
 
 #define FRAMES_PER_SECOND 60
-#define VISIBLE_ROWS 6
 #define MAX_DEPTH 8
 #define CMD_PATH "/tmp/cmd_to_run.sh"
 #define STATE_PATH "/tmp/mainui_state"
@@ -48,18 +48,29 @@ static void sigHandler(int sig)
 
 static Menu *current(void) { return &stack[depth]; }
 
+static void move(Menu *menu, int delta)
+{
+    menu_move(menu, delta, view_visible(menu->kind), view_isPaged(menu->kind));
+}
+
+static void add_tab(Menu *menu, MenuKind kind)
+{
+    menu_add(menu, ENTRY_MENU, _tab_label(kind), NULL, kind);
+}
+
 static void fill_menu(Menu *menu)
 {
     switch (menu->kind) {
     case MENU_MAIN:
-        library_loadGames(RECENTLIST_PATH);
-        if (game_count > 0)
-            menu_add(menu, ENTRY_MENU, lang_get(LANG_RECENTS_TAB, LANG_FALLBACK_RECENTS_TAB), NULL, MENU_RECENTS);
-        menu_add(menu, ENTRY_MENU, lang_get(LANG_FAVORITES_TAB, LANG_FALLBACK_FAVORITES_TAB), NULL, MENU_FAVORITES);
-        menu_add(menu, ENTRY_MENU, lang_get(LANG_GAMES_TAB, LANG_FALLBACK_GAMES_TAB), NULL, MENU_SYSTEMS);
-        menu_add(menu, ENTRY_MENU, lang_get(LANG_APPS_TAB, LANG_FALLBACK_APPS_TAB), NULL, MENU_APPS);
-        if (is_dir(TWEAKS_APP))
-            menu_add(menu, ENTRY_APP, lang_get(LANG_SETTINGS_TAB, "Settings"), TWEAKS_APP, 0);
+        // The tabs of the Miyoo MainUI, Recents and Expert as set in Tweaks
+        if (settings.show_recents)
+            add_tab(menu, MENU_RECENTS);
+        add_tab(menu, MENU_FAVORITES);
+        add_tab(menu, MENU_SYSTEMS);
+        if (settings.show_expert)
+            add_tab(menu, MENU_EXPERT);
+        add_tab(menu, MENU_APPS);
+        add_tab(menu, MENU_SETTINGS);
         break;
     case MENU_RECENTS:
         library_fillGames(menu, RECENTLIST_PATH);
@@ -68,7 +79,11 @@ static void fill_menu(Menu *menu)
         library_fillGames(menu, FAVORITES_PATH);
         break;
     case MENU_SYSTEMS:
-        library_loadSystems();
+        library_loadSystems(EMU_DIR);
+        library_fillSystems(menu);
+        break;
+    case MENU_EXPERT:
+        library_loadSystems(RAPP_DIR);
         library_fillSystems(menu);
         break;
     case MENU_ROMS:
@@ -76,6 +91,8 @@ static void fill_menu(Menu *menu)
         break;
     case MENU_APPS:
         library_fillApps(menu);
+        break;
+    default:
         break;
     }
 
@@ -163,7 +180,13 @@ static void activate(bool launch)
 
     switch (entry->type) {
     case ENTRY_MENU:
-        push_menu((MenuKind)entry->index, entry->label, 0, NULL);
+        if (entry->index == MENU_SETTINGS) {
+            // No Miyoo settings screen yet, Tweaks has the Onion settings
+            if (launch && is_dir(TWEAKS_APP))
+                launch_app(TWEAKS_APP);
+        }
+        else
+            push_menu((MenuKind)entry->index, entry->label, 0, NULL);
         break;
     case ENTRY_SYSTEM:
         push_menu(MENU_ROMS, entry->label, entry->index, NULL);
@@ -210,8 +233,7 @@ static void restore_state(void)
         if (active >= 0 && active < menu->count) {
             menu->active = active;
             menu->top = top >= 0 && top <= active ? top : active;
-            if (menu->active >= menu->top + VISIBLE_ROWS)
-                menu->top = menu->active - VISIBLE_ROWS + 1;
+            move(menu, 0);
         }
         level++;
     }
@@ -242,7 +264,7 @@ static void toggle_favorite(void)
         fill_menu(menu);
         menu->active = active < menu->count ? active : menu->count - 1;
         menu->top = 0;
-        menu_move(menu, 0, VISIBLE_ROWS);
+        move(menu, 0);
     }
 }
 
@@ -282,7 +304,8 @@ int main(int argc, char *argv[])
     fill_menu(&stack[0]);
     restore_state();
 
-    List view = list_create(VISIBLE_ROWS, LIST_SMALL);
+    List list_view = list_create(LIST_VISIBLE, LIST_SMALL),
+         apps_view = list_create(APPS_VISIBLE, LIST_LARGE);
     int battery_percentage = battery_getPercentage();
     bool changed = true;
     SDLKey changed_key = SDLK_UNKNOWN;
@@ -297,16 +320,32 @@ int main(int argc, char *argv[])
 
         if (updateKeystate(keystate, &quit, true, &changed_key)) {
             Menu *menu = current();
-            int before = menu->active, depth_before = depth;
+            int before = menu->active, depth_before = depth,
+                visible = view_visible(menu->kind), cols = view_columns(menu->kind);
+            bool is_main = menu->kind == MENU_MAIN, is_grid = cols > 1;
 
-            if (keystate[SW_BTN_UP] >= PRESSED)
-                menu_move(menu, -1, VISIBLE_ROWS);
-            else if (keystate[SW_BTN_DOWN] >= PRESSED)
-                menu_move(menu, 1, VISIBLE_ROWS);
-            else if (keystate[SW_BTN_LEFT] >= PRESSED || keystate[SW_BTN_L1] >= PRESSED)
-                menu_move(menu, -VISIBLE_ROWS, VISIBLE_ROWS);
-            else if (keystate[SW_BTN_RIGHT] >= PRESSED || keystate[SW_BTN_R1] >= PRESSED)
-                menu_move(menu, VISIBLE_ROWS, VISIBLE_ROWS);
+            // Main screen: a row of tabs. Grids: arrows move on the grid,
+            // L1/R1 change page. Lists: up/down, left/right/L1/R1 page.
+            if (keystate[SW_BTN_UP] >= PRESSED) {
+                if (!is_main)
+                    move(menu, is_grid ? -cols : -1);
+            }
+            else if (keystate[SW_BTN_DOWN] >= PRESSED) {
+                if (!is_main)
+                    move(menu, is_grid ? cols : 1);
+            }
+            else if (keystate[SW_BTN_LEFT] >= PRESSED)
+                move(menu, is_main || is_grid ? -1 : -visible);
+            else if (keystate[SW_BTN_RIGHT] >= PRESSED)
+                move(menu, is_main || is_grid ? 1 : visible);
+            else if (keystate[SW_BTN_L1] >= PRESSED) {
+                if (!is_main)
+                    move(menu, -visible);
+            }
+            else if (keystate[SW_BTN_R1] >= PRESSED) {
+                if (!is_main)
+                    move(menu, visible);
+            }
             else if (changed_key == SW_BTN_A && keystate[SW_BTN_A] == PRESSED) {
                 sound_change();
                 activate(true);
@@ -340,15 +379,15 @@ int main(int argc, char *argv[])
         if (acc_ticks >= time_step) {
             if (changed) {
                 Menu *menu = current();
-                menu_fillView(menu, &view, VISIBLE_ROWS, preview_path());
-
-                theme_renderHeader(screen, menu->title, false);
-                theme_renderList(screen, &view);
-                theme_renderFooter(screen);
-                theme_renderStandardHint(screen, lang_get(LANG_SELECT, LANG_FALLBACK_SELECT),
-                                         depth > 0 ? lang_get(LANG_BACK, LANG_FALLBACK_BACK) : NULL);
-                theme_renderFooterStatus(screen, menu->active + 1, menu->count);
-                theme_renderHeaderBattery(screen, battery_percentage);
+                if (menu->kind == MENU_MAIN)
+                    view_renderMain(screen, menu, battery_percentage);
+                else if (view_isPaged(menu->kind))
+                    view_renderGrid(screen, menu, battery_percentage);
+                else {
+                    List *view = menu->kind == MENU_APPS ? &apps_view : &list_view;
+                    menu_fillView(menu, view, view_visible(menu->kind), preview_path());
+                    view_renderList(screen, menu, view, depth > 0, battery_percentage);
+                }
 
                 SDL_BlitSurface(screen, NULL, video, NULL);
                 SDL_Flip(video);
@@ -364,8 +403,11 @@ int main(int argc, char *argv[])
     SDL_FillRect(video, NULL, 0);
     SDL_Flip(video);
 
-    menu_fillView(current(), &view, 0, NULL);
-    list_free(&view);
+    menu_fillView(current(), &list_view, 0, NULL);
+    menu_fillView(current(), &apps_view, 0, NULL);
+    list_free(&list_view);
+    list_free(&apps_view);
+    view_free();
     while (depth >= 0)
         menu_free(&stack[depth--]);
     free(games);

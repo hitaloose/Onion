@@ -18,11 +18,13 @@
 
 #define EMU_DIR "/mnt/SDCARD/Emu"
 #define APP_DIR "/mnt/SDCARD/App"
+#define RAPP_DIR "/mnt/SDCARD/RApp"
 #define MAX_SYSTEMS 128
+#define MAX_APPS 128
 #define MAX_RECENTS 50
 #define MAX_GAMELIST_NAMES 4096
 
-// An Emu/<SYS>/config.json, as read by the Miyoo MainUI
+// An Emu/<SYS>/config.json (or RApp/<core>/config.json), as read by the Miyoo MainUI
 typedef struct {
     char dir[STR_MAX];      // /mnt/SDCARD/Emu/GBA
     char label[STR_MAX];    // GBA
@@ -31,10 +33,23 @@ typedef struct {
     char imgpath[STR_MAX];  // ../../Roms/GBA/Imgs (relative to dir)
     char gamelist[STR_MAX]; // ../../Roms/GBA/miyoogamelist.xml
     char extlist[STR_MAX];  // bin|gba|zip|7z
+    char icon[STR_MAX];     // absolute path, empty if none
+    char iconsel[STR_MAX];  // icon when selected, absolute path
 } System;
 
 static System systems[MAX_SYSTEMS];
 static int system_count = 0;
+
+// An App/<name>/config.json
+typedef struct {
+    char dir[STR_MAX];
+    char label[STR_MAX];
+    char icon[STR_MAX]; // absolute path, empty if none
+    char description[STR_MAX];
+} App;
+
+static App apps[MAX_APPS];
+static int app_count = 0;
 
 // Recents and favorites, one JSON object per line, newest first
 static JsonGameEntry *games = NULL;
@@ -102,9 +117,25 @@ void system_romRoot(const System *system, char *out)
     snprintf(out, STR_MAX * 2, "%s/%s", system->dir, system->rompath);
 }
 
-void library_loadSystems(void)
+// Config paths are absolute or relative to the config's folder
+static void _config_path(cJSON *config, const char *key, const char *dir, char *out)
 {
-    DIR *dp = opendir(EMU_DIR);
+    char value[STR_MAX] = "";
+    out[0] = '\0';
+    if (!json_getString(config, key, value) || strlen(value) == 0)
+        return;
+    if (value[0] == '/')
+        strncpy(out, value, STR_MAX - 1);
+    else
+        snprintf(out, STR_MAX, "%s/%s", dir, value);
+    if (!is_file(out))
+        out[0] = '\0';
+}
+
+// Loads the systems of Emu (Games tab) or RApp (Expert tab) that have ROMs
+void library_loadSystems(const char *base_dir)
+{
+    DIR *dp = opendir(base_dir);
     struct dirent *ep;
 
     system_count = 0;
@@ -115,7 +146,7 @@ void library_loadSystems(void)
         char config_path[STR_MAX * 2];
         if (ep->d_name[0] == '.')
             continue;
-        snprintf(config_path, sizeof(config_path), EMU_DIR "/%s/config.json", ep->d_name);
+        snprintf(config_path, sizeof(config_path), "%s/%s/config.json", base_dir, ep->d_name);
         if (!is_file(config_path))
             continue;
 
@@ -125,7 +156,7 @@ void library_loadSystems(void)
 
         System *system = &systems[system_count];
         memset(system, 0, sizeof(System));
-        snprintf(system->dir, STR_MAX, EMU_DIR "/%s", ep->d_name);
+        snprintf(system->dir, STR_MAX, "%s/%s", base_dir, ep->d_name);
 
         char launch[STR_MAX] = "launch.sh";
         json_getString(config, "label", system->label);
@@ -134,6 +165,8 @@ void library_loadSystems(void)
         json_getString(config, "imgpath", system->imgpath);
         json_getString(config, "gamelist", system->gamelist);
         json_getString(config, "extlist", system->extlist);
+        _config_path(config, "icon", system->dir, system->icon);
+        _config_path(config, "iconsel", system->dir, system->iconsel);
         cJSON_Delete(config);
         char launch_path[STR_MAX * 2];
         snprintf(launch_path, sizeof(launch_path), "%s/%s", system->dir, launch);
@@ -274,23 +307,30 @@ void library_fillApps(Menu *menu)
     DIR *dp = opendir(APP_DIR);
     struct dirent *ep;
 
+    app_count = 0;
     if (!dp)
         return;
-    while ((ep = readdir(dp))) {
-        char config_path[STR_MAX * 2], app_dir[STR_MAX], label[STR_MAX] = "";
+    while ((ep = readdir(dp)) && app_count < MAX_APPS) {
+        char config_path[STR_MAX * 2];
         if (ep->d_name[0] == '.')
             continue;
-        snprintf(app_dir, STR_MAX, APP_DIR "/%s", ep->d_name);
-        snprintf(config_path, sizeof(config_path), "%s/config.json", app_dir);
+        App *app = &apps[app_count];
+        memset(app, 0, sizeof(App));
+        snprintf(app->dir, STR_MAX, APP_DIR "/%s", ep->d_name);
+        snprintf(config_path, sizeof(config_path), "%s/config.json", app->dir);
         if (!is_file(config_path))
             continue;
 
         cJSON *config = json_load(config_path);
         if (!config)
             continue;
-        json_getString(config, "label", label);
+        json_getString(config, "label", app->label);
+        json_getString(config, "description", app->description);
+        _config_path(config, "icon", app->dir, app->icon);
         cJSON_Delete(config);
-        menu_add(menu, ENTRY_APP, strlen(label) ? label : ep->d_name, app_dir, 0);
+        if (strlen(app->label) == 0)
+            strncpy(app->label, ep->d_name, STR_MAX - 1);
+        menu_add(menu, ENTRY_APP, app->label, app->dir, app_count++);
     }
     closedir(dp);
     menu_sort(menu);
