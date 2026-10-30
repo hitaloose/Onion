@@ -47,6 +47,9 @@ RetroArch config, `strings` on its binaries). Facts marked **TODO** must be fill
 - **known**: `owlfb`, 32bpp, stride 2560, `pan` used for flipping. `virtual_size` is set by the running
   app, not fixed: stock Garlic leaves 640x1440, a Garlic variant left 640x960 panned to 0,480, and
   SDL 1.2 fbcon sets 640x960 at offset 0,0 on `SDL_SetVideoMode`.
+- **known**: refresh 60.46 Hz, measured with `platform/rg35xx/tools/vsynchz.c` (vsync interrupt,
+  16.35-16.68 ms per frame). The fb mode says 56 Hz: the DTS `pixclock` is only reported, U-Boot sets
+  the LCD clock.
 - **known**: pixel layout `rgba 8/0,8/8,8/16,0/24`: red is the low byte (ABGR8888 as a 32-bit word).
   The Miyoo is ARGB8888, so direct framebuffer writes (OSD, screenshots) must swap R and B.
 

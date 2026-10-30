@@ -113,8 +113,13 @@ Implantar com o aparelho rodando o Onion (ADB habilitado por `/misc/enableADB`):
 
 1. Kernel próprio / independência do kernel do Garlic (resolvido pelo plano G1 abaixo).
 2. ~~Bateria mostra 0% nos primeiros ~7-10 s depois de ligar~~ (corrigido no batmon, ver 6b).
-3. 60 Hz (painel em 56,4 Hz; pixclock ~47026 ps daria 60 Hz) e vsync (`OWLFB_WAITFORVSYNC`;
-   referência open source: MinUI do shauninman, plataforma rg35xx).
+3. ~~60 Hz e vsync~~ (2026-10-30): a tela já roda a **60,46 Hz** medidos (`tools/vsynchz.c`); o
+   56,4 era só a conta com o `pixclock` do DTS, que o kernel apenas reporta (`640x480p-56`): quem
+   programa o clock do LCD é a U-Boot (`lcdchw_get_clocks` está em `#if 0`). Vsync: o
+   `OWLFB_WAITFORVSYNC` só espera com a interrupção ligada por `OWLFB_VSYNC_EVENT_EN` (no Android
+   era o hwcomposer); `retroarch/patches/0007` liga e espera a cada troca no contexto `mali_fbdev`.
+   `rg35xx_retroarch_gpu.cfg` força `video_vsync` e `video_refresh_rate = 60.46`. Tekken 3: 60,4
+   FPS com vsync (88 sem); Yoshi's Island deixou de oscilar entre 58 e 63 FPS. Testado.
 4. ~~Clock por sistema~~ (2026-10-30): jogos rodam no `performance` (o `interactive` ficava em
    ~504 MHz no PS1) e o RetroArch (`retroarch/patches/0006`) lê o `cpuclock.txt` do Onion
    (`config/<core>/` e depois `RetroArch/`) e grava em `scaling_max_freq`, teto e padrão 1200 MHz;

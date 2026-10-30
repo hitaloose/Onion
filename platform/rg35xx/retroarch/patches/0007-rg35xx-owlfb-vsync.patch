@@ -1,0 +1,83 @@
+--- a/gfx/drivers_context/mali_fbdev_ctx.c	2026-10-30 17:03:54
++++ b/gfx/drivers_context/mali_fbdev_ctx.c	2026-10-30 17:04:11
+@@ -71,6 +71,43 @@
+ static mali_ctx_data_t *gfx_ctx_mali_fbdev_global = NULL;
+ static uint8_t mali_flags = 0;
+ 
++#ifdef RG35XX
++/* owlfb (RG35XX): the PowerVR FLIP window system ignores eglSwapInterval,
++ * so vsync waits for the display interrupt after each swap. The owlfb
++ * OWLFB_WAITFORVSYNC returns at once unless the interrupt is enabled with
++ * OWLFB_VSYNC_EVENT_EN (the Android hwcomposer did that on the stock
++ * firmware) */
++struct owlfb_sync_info
++{
++   uint8_t enabled;
++   uint8_t disp_id;
++   uint16_t reserved2;
++};
++
++#define OWLFB_WAITFORVSYNC   _IOW('O', 57, long long)
++#define OWLFB_VSYNC_EVENT_EN _IOW('O', 67, struct owlfb_sync_info)
++
++static int owlfb_vsync_fd       = -1;
++static int owlfb_swap_interval  = 0;
++
++static void owlfb_vsync_enable(bool enable)
++{
++   struct owlfb_sync_info sync = { enable, 0, 0 };
++
++   if (enable && owlfb_vsync_fd < 0)
++      owlfb_vsync_fd = open("/dev/fb0", O_RDWR);
++   if (owlfb_vsync_fd < 0)
++      return;
++   if (ioctl(owlfb_vsync_fd, OWLFB_VSYNC_EVENT_EN, &sync) < 0)
++      RARCH_ERR("[Mali] OWLFB_VSYNC_EVENT_EN failed.\n");
++   if (!enable)
++   {
++      close(owlfb_vsync_fd);
++      owlfb_vsync_fd = -1;
++   }
++}
++#endif
++
+ static int gfx_ctx_mali_fbdev_get_vinfo(void *data)
+ {
+    struct fb_var_screeninfo vinfo;
+@@ -170,6 +207,9 @@
+       egl_destroy(&gfx_ctx_mali_fbdev_global->egl);
+ #endif
+       gfx_ctx_mali_fbdev_global->resize=false;
++#ifdef RG35XX
++      owlfb_vsync_enable(false);
++#endif
+       free(gfx_ctx_mali_fbdev_global);
+       gfx_ctx_mali_fbdev_global=NULL;
+    }
+@@ -359,6 +399,10 @@
+    mali_ctx_data_t *mali = (mali_ctx_data_t*)data;
+    egl_set_swap_interval(&mali->egl, swap_interval);
+ #endif
++#ifdef RG35XX
++   owlfb_swap_interval = swap_interval;
++   owlfb_vsync_enable(swap_interval > 0);
++#endif
+ }
+ static void gfx_ctx_mali_fbdev_swap_buffers(void *data)
+ {
+@@ -366,6 +410,15 @@
+    mali_ctx_data_t *mali = (mali_ctx_data_t*)data;
+    egl_swap_buffers(&mali->egl);
+ #endif
++#ifdef RG35XX
++   if (owlfb_vsync_fd >= 0)
++   {
++      long long timestamp = 0;
++      int i;
++      for (i = 0; i < owlfb_swap_interval; i++)
++         ioctl(owlfb_vsync_fd, OWLFB_WAITFORVSYNC, &timestamp);
++   }
++#endif
+ }
+ static void gfx_ctx_mali_fbdev_bind_hw_render(void *data, bool enable)
+ {

@@ -60,7 +60,8 @@ The repo's `rg35xx_atm7039.dts` (Koriki) is **not used**. Compared with the stoc
   (a wrong PWM table would change the CPU/GPU voltage);
 - has a different 2100 mAh battery table;
 - drops `lcd_spics2_gpios` (GPIO 31) and `earphone_detect2_gpios`, and changes the LED settings;
-- enables the GPU (stock: `status = "disabled"`) and sets `pixclock` 47000 (60 Hz) instead of 50000.
+- enables the GPU (stock: `status = "disabled"`) and sets `pixclock` 47000 (60 Hz) instead of 50000. The kernel does not program the LCD clock
+  (U-Boot does), so `pixclock` only changes the reported mode: the panel runs at 60.46 Hz either way.
 
 So `dts/gs705a.dtsi` is the Anbernic stock `kernel.dtb` (card image `35XX-64GB230309EN`, 2100 mAh
 battery). It was first decompiled from Garlic's, whose only changes are a 2600 mAh battery table,
@@ -162,8 +163,10 @@ triangle) runs smoothly, at about 789 fps (no vsync wait), `GL renderer: PowerVR
   5-40 fps. Pixel rounding (2xScaleHQ, hq2x, scale2x) is fast enough only for small screens
   (GB/GBC/GG and, at 400 MHz, GBA), because its cost scales with the source size; on SNES it
   stays just under 60 fps even at 400 MHz.
-- **Vsync does nothing**: `video_vsync` on or off gives the same unthrottled speed (FLIP ignores
-  `eglSwapInterval`). Games are paced by audio sync, as with the `sdl` driver.
+- **Vsync**: FLIP ignores `eglSwapInterval`, and the `dc_owl` flip does not wait either. owlfb's
+  `OWLFB_WAITFORVSYNC` returns at once unless the vsync interrupt is enabled with
+  `OWLFB_VSYNC_EVENT_EN` (the Android hwcomposer's job). RetroArch patch `0007` enables it and waits
+  after each `eglSwapBuffers`; with `video_vsync` games run at the panel's 60.46 Hz.
 - Testing pitfalls: RetroArch keeps the **first** occurrence of a repeated key in a config file
   (an appended line does not override an earlier one in the same file), and Onion's keymon
   SIGSTOPs RetroArch when the screen times out (stop keymon during long adb benchmarks).
