@@ -120,8 +120,10 @@ Implantar com o aparelho rodando o Onion (ADB habilitado por `/misc/enableADB`):
    (`config/<core>/` e depois `RetroArch/`) e grava em `scaling_max_freq`, teto e padrão 1200 MHz;
    o `launch_game_postprocess` volta para `interactive`/1200. Padrões em `platform/rg35xx/configs/`
    (copiados pelo `dist.sh`): Gambatte e FCEUmm 720, Beetle PCE Fast 840, gpSP 1008; PicoDrive
-   (32X/Sega CD), Supafaust (SuperFX) e PCSX ficam em 1200. Testado (GB, GBA, SFC). Falta: vídeo
-   em thread para PS1.
+   (32X/Sega CD), Supafaust (SuperFX) e PCSX ficam em 1200. Testado (GB, GBA, SFC). Vídeo em
+   thread no PS1: o PCSX ReARMed já sai com `USE_ASYNC_GPU` e `gpu_thread_rendering = "auto"` liga
+   (4 núcleos online). Tekken 3, save state, 1200 MHz, sem limite: 75 FPS sem a thread, 88 com ela;
+   `spu_thread` não muda nada (87).
 5. `LD_PRELOAD=libpadsp.so` fixo em GameSwitcher/state.h/apps.h/randomGamePicker e scripts.
 6. Telas do MainUI ainda sem referência (capa na lista, Configurações do Miyoo, lista vazia, pop-ups):
    ver "O que falta" em `docs/rg35xx-mainui.md`.
