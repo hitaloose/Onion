@@ -108,6 +108,17 @@ os nomes dos consoles somem na grade, como no Miyoo.
 
 Novas capturas do Onion no Miyoo (vídeos, fóruns) podem fechar os itens 1, 2, 5, 6, 7 e 9.
 
+## Temas e idiomas
+
+- `platform/rg35xx/tools/get_themes.sh` baixa todos os temas do OnionUI/Themes (`release/*.zip`, 202
+  temas, ~1 GB) para `cache/rg35xx/themes`; o `dist.sh` põe o Silky by DiMo extraído em `Themes/` (é o
+  tema padrão; escolhê-lo no Theme Switcher volta ao padrão) e os outros zipados. O Theme Switcher
+  extrai os previews com `7z` na primeira vez (cerca de 2 minutos para os 202).
+- Idioma: no Miyoo era escolhido nas Configurações de fábrica. Aqui fica em Tweaks → System →
+  Language, que lista `miyoo/app/lang/*.lang` pelo nome em inglês e grava o `language` do
+  `system.json`; o MainUI usa o novo idioma ao voltar do Tweaks. O `lt.lang` do Onion tem JSON
+  inválido e não aparece.
+
 ## Como testar sem mexer no aparelho
 
 Com o aparelho rodando o Onion e ADB pela porta OTG:

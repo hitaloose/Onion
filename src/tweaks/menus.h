@@ -182,7 +182,16 @@ void menu_datetime(void *_)
 void menu_system(void *_)
 {
     if (!_menu_system._created) {
-        _menu_system = list_createWithTitle(6, LIST_SMALL, "System");
+        _menu_system = list_createWithTitle(7, LIST_SMALL, "System");
+        ListItem language = {
+            .label = "Language",
+            .item_type = MULTIVALUE,
+            .action = action_setLanguage};
+        language.value_max = tweaks_langList(language.value_labels, &language.value) - 1;
+        if (language.value_max >= 0)
+            list_addItemWithInfoNote(&_menu_system, language,
+                                     "Language of the main menu and of\n"
+                                     "the system texts.");
         list_addItem(&_menu_system,
                      (ListItem){
                          .label = "Startup...",

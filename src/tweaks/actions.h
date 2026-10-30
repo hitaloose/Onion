@@ -1,8 +1,12 @@
 #ifndef TWEAKS_ACTIONS_H__
 #define TWEAKS_ACTIONS_H__
 
+#include <dirent.h>
+#include <strings.h>
+
 #include "components/list.h"
 #include "system/axp.h"
+#include "system/lang.h"
 #include "system/osd.h"
 #include "system/rumble.h"
 #include "system/settings.h"
@@ -148,6 +152,67 @@ void action_setVibration(void *pt)
     skip_next_change = true;
     settings.vibration = ((ListItem *)pt)->value;
     short_pulse();
+}
+
+// Language files in LANG_DIR, listed by the Language item in System
+static char lang_files[MAX_NUM_VALUES][STR_MAX];
+
+static int _lang_compare(const void *a, const void *b)
+{
+    return strcasecmp(((const char(*)[STR_MAX])a)[1], ((const char(*)[STR_MAX])b)[1]);
+}
+
+// Fills labels with the English name of each language (the part in
+// parentheses of its "lang" key, the theme fonts may lack other scripts) and
+// returns the count; *current is the index of settings.language
+int tweaks_langList(char labels[MAX_NUM_VALUES][STR_MAX], int *current)
+{
+    static char entries[MAX_NUM_VALUES][2][STR_MAX]; // file, label
+    int count = 0;
+    DIR *dp = opendir(LANG_DIR);
+    struct dirent *ep;
+
+    *current = 0;
+    if (!dp)
+        return 0;
+    while ((ep = readdir(dp)) && count < MAX_NUM_VALUES) {
+        if (strcmp("lang", file_getExtension(ep->d_name)) != 0)
+            continue;
+        char path[STR_MAX * 2], name[STR_MAX] = "";
+        snprintf(path, sizeof(path), LANG_DIR "/%s", ep->d_name);
+        cJSON *root = json_load(path);
+        if (!root)
+            continue;
+        json_getString(root, "lang", name);
+        cJSON_Delete(root);
+
+        char *open = strchr(name, '('), *close = strrchr(name, ')');
+        if (!open) // fullwidth parentheses, as in Japanese
+            open = strstr(name, "\xef\xbc\x88"), close = strstr(name, "\xef\xbc\x89");
+        if (open && close && close > open) {
+            int skip = (unsigned char)*open == 0xef ? 3 : 1;
+            *close = '\0';
+            memmove(name, open + skip, strlen(open + skip) + 1);
+        }
+        strncpy(entries[count][0], ep->d_name, STR_MAX - 1);
+        strncpy(entries[count][1], name[0] ? name : ep->d_name, STR_MAX - 1);
+        count++;
+    }
+    closedir(dp);
+
+    qsort(entries, count, sizeof(entries[0]), _lang_compare);
+    for (int i = 0; i < count; i++) {
+        strcpy(lang_files[i], entries[i][0]);
+        strcpy(labels[i], entries[i][1]);
+        if (strcmp(entries[i][0], settings.language) == 0)
+            *current = i;
+    }
+    return count;
+}
+
+void action_setLanguage(void *pt)
+{
+    strcpy(settings.language, lang_files[((ListItem *)pt)->value]);
 }
 
 void action_setLowBatteryAutoSave(void *pt)

@@ -101,6 +101,22 @@ cp "$CACHE_DIR"/cores/*_libretro.so "$RA_DIR/cores/"
 cp -R "$PLATFORM_DIR/retroarch/autoconfig/." "$RA_DIR/autoconfig/"
 cp -R "$CACHE_DIR/shaders/." "$RA_DIR/shaders/"
 
+# Every theme of OnionUI/Themes (tools/get_themes.sh). As in the Miyoo build,
+# the default Silky is extracted and the others stay zipped until the Theme
+# Switcher installs them
+THEMES_DIR="$CACHE_DIR/themes"
+if [ -d "$THEMES_DIR" ]; then
+    mkdir -p "$OUT/Themes"
+    for zip in "$THEMES_DIR"/*.zip; do
+        case "$zip" in
+        */"Silky by DiMo.zip") unzip -oq "$zip" -d "$OUT/Themes" ;;
+        *) cp "$zip" "$OUT/Themes/" ;;
+        esac
+    done
+else
+    echo "warning: no themes, run platform/rg35xx/tools/get_themes.sh" >&2
+fi
+
 # Onion's own MainUI replaces the Miyoo one
 mv "$SYSDIR/bin/MainUI" "$OUT/miyoo/app/MainUI"
 
