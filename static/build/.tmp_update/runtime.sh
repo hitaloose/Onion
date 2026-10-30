@@ -462,6 +462,13 @@ launch_game() {
                 # GameSwitcher overlay, which shares the VT and would get
                 # only part of the key events
                 export SDL_FBCON_NOKEYBOARD=1
+
+                # The Miyoo RetroArch sets the clock itself while a game runs.
+                # Here interactive stays near 504 MHz in games: the time
+                # spent waiting for vsync looks idle, so frames come late.
+                # Run at the 1200 MHz maximum (launch_game_postprocess
+                # restores interactive)
+                echo performance > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
             fi
 
             # make the cmd_to_run shell env aware of the new timezone

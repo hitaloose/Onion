@@ -115,7 +115,9 @@ Implantar com o aparelho rodando o Onion (ADB habilitado por `/misc/enableADB`):
 2. ~~Bateria mostra 0% nos primeiros ~7-10 s depois de ligar~~ (corrigido no batmon, ver 6b).
 3. 60 Hz (painel em 56,4 Hz; pixclock ~47026 ps daria 60 Hz) e vsync (`OWLFB_WAITFORVSYNC`;
    referência open source: MinUI do shauninman, plataforma rg35xx).
-4. Clock por sistema e `target_loads` do `interactive` (bateria), vídeo em thread para PS1.
+4. Clock por sistema (o `cpuclock.txt` do Onion não é lido: hoje todo jogo roda no `performance` a
+   1,2 GHz, porque o `interactive` ficava em ~504 MHz no PS1 e o jogo atrasava), vídeo em thread
+   para PS1.
 5. `LD_PRELOAD=libpadsp.so` fixo em GameSwitcher/state.h/apps.h/randomGamePicker e scripts.
 6. Telas do MainUI ainda sem referência (capa na lista, Configurações do Miyoo, lista vazia, pop-ups):
    ver "O que falta" em `docs/rg35xx-mainui.md`.
