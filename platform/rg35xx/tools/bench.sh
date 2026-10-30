@@ -6,17 +6,20 @@
 # from the difference, so loading the core and the ROM is not counted.
 #
 # Usage (from the repo root, Onion running with ADB):
-#   platform/rg35xx/tools/bench.sh CORE ROM [FRAMES] [MHZ]
+#   platform/rg35xx/tools/bench.sh CORE ROM [FRAMES] [MHZ] [OPT]
 #   CORE  core name without _libretro.so (e.g. gpsp)
 #   ROM   path on the card, as /mnt/SDCARD/Roms/...
-#   defaults: 3000 frames, 1200 MHz
+#   OPT   core options to start from, an Onion config/<core>/<core>.opt on
+#         the card (e.g. the one that skips the MAME disclaimer); copied to /tmp
+#   defaults: 3000 frames, 1200 MHz, core defaults
 set -e
 
-[ $# -ge 2 ] || { sed -n '2,13p' "$0"; exit 1; }
+[ $# -ge 2 ] || { sed -n '2,15p' "$0"; exit 1; }
 CORE="$1"
 ROM="$2"
 FRAMES="${3:-3000}"
 MHZ="${4:-1200}"
+OPT="${5:-}"
 REPO="$(cd "$(dirname "$0")/../../.." && pwd)"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
@@ -29,6 +32,7 @@ quote() { printf "'%s'" "$(printf %s "$1" | sed "s/'/'\\\\''/g")"; }
     echo "ROM=$(quote "$ROM")"
     echo "FRAMES=$FRAMES"
     echo "MHZ=$MHZ"
+    echo "OPT=$(quote "$OPT")"
     cat << 'EOF'
 trap '' HUP
 D=/tmp/bench
@@ -36,6 +40,11 @@ CPU=/sys/devices/system/cpu/cpu0/cpufreq
 rm -rf $D
 mkdir -p $D/config $D/saves $D/states
 echo $MHZ > $D/cpuclock.txt
+# Per-core options (global_core_options off): config/<core>/<core>.opt
+if [ -n "$OPT" ]; then
+    mkdir -p "$D/config/$(basename "$(dirname "$OPT")")"
+    cp "$OPT" "$D/config/$(basename "$(dirname "$OPT")")/"
+fi
 cat > $D/bench.cfg << CFG
 audio_driver = "null"
 audio_sync = "false"

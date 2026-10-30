@@ -14,13 +14,13 @@ REPO="$(cd "$(dirname "$0")/../../.." && pwd)"
 SD="$REPO/cache/rg35xx/sd"
 DRY=
 [ "$1" = "-n" ] && { DRY=1; shift; }
-PATHS="${*:-.tmp_update/bin .tmp_update/lib .tmp_update/script .tmp_update/runtime.sh miyoo/app App Emu RApp RetroArch}"
+[ $# -gt 0 ] || set -- .tmp_update/bin .tmp_update/lib .tmp_update/script \
+    .tmp_update/runtime.sh miyoo/app App Emu RApp RetroArch
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
 cd "$SD"
-# shellcheck disable=SC2086
-find $PATHS -type f 2> /dev/null | sort | while read -r f; do
+find "$@" -type f 2> /dev/null | sort | while read -r f; do
     printf '%s  %s\n' "$(md5 -q "$f")" "$f"
 done > "$TMP/host.md5"
 [ -s "$TMP/host.md5" ] || { echo "nothing to compare" >&2; exit 1; }
