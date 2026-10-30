@@ -219,6 +219,11 @@ Actions SDK tree has no board device tree with a `/pmu` node and its defconfig l
 without a serial console two flashes failed blind (work parked in `~/Development/u-boot_s500-rg35xx`,
 backups in `~/rg35xx-backup/`).
 
+**Other changes over the stock ramdisk.** `initlogo.rle` is a black 640x480 image: without it init
+writes "A N D R O I D" on `tty0`. `loadapp.sh` mounts the roms partition with `errors=continue`, as
+Garlic does; the kernel default `remount-ro` left the card read-only after any FAT error, and
+`fat_remount` in 3.10 ignores options, so it only works at that first mount.
+
 **Still from Garlic**: the ramdisk base, `bootloader.img`, `u-boot-dtb.img`, `uenv.txt` and the boot
 images. A release needs these replaced, or proof that they are the stock Anbernic files.
 
@@ -239,11 +244,8 @@ and compare `md5sum`. Rollback: card in the Mac, copy `garlic-misc/*` back over 
   charger cycling on a USB port); restarting the adb server on the Mac
   (`adb kill-server`) until it shows up has worked, and so has unplugging and replugging the cable. The USB monitor logs "set adaptor mode" when the
   host does not enumerate in time.
-- **"android" text on screen during boot**: init's console output on fbcon (`FRAMEBUFFER_CONSOLE=y`).
 - **Headphone detection untested**: the stock tree sets `earphone_detect_method = 3` and
   `earphone_detect2_gpios`, which this codec driver does not know (it uses GPIO 28).
-- **FAT mounts use `errors=remount-ro`** (Garlic: `errors=continue`): a real FAT error makes the card
-  read-only until reboot.
 - **Leaving GameSwitcher for the game list powers the device off** now and then: seen with the
   `sdl` RetroArch driver and again with `gl` and the GPU at 400 MHz. Now explained by the battery
   flag: a 0% gauge reading at boot armed `/tmp/.lowBat` and the first game exit ran `bootScreen
